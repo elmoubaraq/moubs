@@ -1,0 +1,47 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        // Required for pdf_manipulator's iText dependency
+        maven { url "https://repo.itextsupport.com/android" }
+    }
+}
+
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    def newSubprojectBuildDir = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+// Fix namespace for legacy plugins that don't specify it (required for AGP 8+)
+// This must run BEFORE the android block is configured
+subprojects { sub ->
+    sub.plugins.withId("com.android.library") {
+        def androidExt = sub.extensions.findByName("android")
+        if (androidExt != null) {
+            try {
+                if (androidExt.namespace == null || androidExt.namespace.isEmpty()) {
+                    def manifestFile = file("${sub.projectDir}/src/main/AndroidManifest.xml")
+                    if (manifestFile.exists()) {
+                        def manifest = new XmlSlurper().parse(manifestFile)
+                        def packageName = manifest.@package.toString()
+                        if (packageName != null && !packageName.isEmpty()) {
+                            androidExt.namespace = packageName
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Namespace might already be set or not applicable
+            }
+        }
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
+}
