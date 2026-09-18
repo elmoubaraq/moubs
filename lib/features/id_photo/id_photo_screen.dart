@@ -79,10 +79,9 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
 
     setState(() => _isProcessing = true);
     try {
-      final result = await ref.read(imageServiceProvider).cropIdPhoto(
-            imagePath: _originalPath!,
-            photoType: _selectedType,
-          );
+      final result = await ref
+          .read(imageServiceProvider)
+          .cropIdPhoto(imagePath: _originalPath!, photoType: _selectedType);
       if (mounted) {
         if (result.isSuccess && result.outputPath != null) {
           setState(() {
@@ -99,9 +98,9 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Crop failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Crop failed: $e')));
       }
     }
   }
@@ -109,14 +108,18 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
   Future<void> _sharePhoto() async {
     final path = _croppedPath ?? _originalPath;
     if (path == null) return;
-    await Share.shareXFiles([XFile(path)], text: 'ID Photo');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(path)], text: 'ID Photo'),
+    );
   }
 
   Future<void> _saveToGallery() async {
     final path = _croppedPath ?? _originalPath;
     if (path == null) return;
     // Share the file as an alternative to saving directly to gallery.
-    await Share.shareXFiles([XFile(path)], text: 'ID Photo');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(path)], text: 'ID Photo'),
+    );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -140,202 +143,212 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
     return Stack(
       children: [
         Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: CustomScrollView(
-          slivers: [
-            ToolSliverHeader(
-              title: 'ID Photo',
-              subtitle: 'Format photos for official identity cards',
-              icon: Icons.badge_rounded,
-              gradient: _gradient,
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Format selector
-                  _IdCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Photo Format',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: CustomScrollView(
+            slivers: [
+              ToolSliverHeader(
+                title: 'ID Photo',
+                subtitle: 'Format photos for official identity cards',
+                icon: Icons.badge_rounded,
+                gradient: _gradient,
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Format selector
+                    _IdCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Photo Format',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: IdPhotoType.values.map((type) {
-                            final t = _typeInfo[type]!;
-                            final selected = _selectedType == type;
-                            return GestureDetector(
-                              onTap: () => setState(() {
-                                _selectedType = type;
-                                _croppedPath = null;
-                              }),
-                              child: AnimatedContainer(
-                                duration: 200.ms,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? const Color(0xFFDC2626).withOpacity(0.2)
-                                      : Colors.white.withOpacity(0.06),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: IdPhotoType.values.map((type) {
+                              final t = _typeInfo[type]!;
+                              final selected = _selectedType == type;
+                              return GestureDetector(
+                                onTap: () => setState(() {
+                                  _selectedType = type;
+                                  _croppedPath = null;
+                                }),
+                                child: AnimatedContainer(
+                                  duration: 200.ms,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: selected
-                                        ? const Color(0xFFDC2626)
-                                        : Colors.white.withOpacity(0.12),
-                                    width: selected ? 1.5 : 1,
+                                        ? const Color(
+                                            0xFFDC2626,
+                                          ).withValues(alpha: 0.2)
+                                        : Colors.white.withValues(alpha: 0.06),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: selected
+                                          ? const Color(0xFFDC2626)
+                                          : Colors.white.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                      width: selected ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        t.icon,
+                                        size: 16,
+                                        color: selected
+                                            ? const Color(0xFFEF4444)
+                                            : Colors.white54,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        t.label,
+                                        style: TextStyle(
+                                          color: selected
+                                              ? Colors.white
+                                              : Colors.white60,
+                                          fontSize: 13,
+                                          fontWeight: selected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      t.icon,
-                                      size: 16,
-                                      color: selected
-                                          ? const Color(0xFFEF4444)
-                                          : Colors.white54,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      t.label,
-                                      style: TextStyle(
-                                        color: selected ? Colors.white : Colors.white60,
-                                        fontSize: 13,
-                                        fontWeight: selected
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+
+                    const SizedBox(height: 12),
+
+                    // Info card
+                    _DimensionsCard(
+                      label: info.label,
+                      dims: info.dims,
+                      icon: info.icon,
+                    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1),
+
+                    const SizedBox(height: 16),
+
+                    // Source buttons
+                    _IdCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Select Source',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _SourceButton(
+                                  icon: Icons.photo_library_rounded,
+                                  label: 'Gallery',
+                                  onTap: _pickFromGallery,
                                 ),
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-
-                  const SizedBox(height: 12),
-
-                  // Info card
-                  _DimensionsCard(
-                    label: info.label,
-                    dims: info.dims,
-                    icon: info.icon,
-                  ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1),
-
-                  const SizedBox(height: 16),
-
-                  // Source buttons
-                  _IdCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Select Source',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _SourceButton(
+                                  icon: Icons.camera_alt_rounded,
+                                  label: 'Camera',
+                                  onTap: _pickFromCamera,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _SourceButton(
-                                icon: Icons.photo_library_rounded,
-                                label: 'Gallery',
-                                onTap: _pickFromGallery,
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+
+                    if (_originalPath != null) ...[
+                      const SizedBox(height: 20),
+
+                      // Original preview
+                      _PhotoPreviewSection(
+                        label: 'Original Photo',
+                        imagePath: _originalPath!,
+                        actions: [
+                          _ActionButton(
+                            icon: Icons.crop_rounded,
+                            label: 'Crop to ID Size',
+                            gradient: _gradient,
+                            onTap: _cropPhoto,
+                          ),
+                        ],
+                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+                    ],
+
+                    if (_croppedPath != null) ...[
+                      const SizedBox(height: 20),
+
+                      // Cropped result
+                      _PhotoPreviewSection(
+                            label: 'Cropped Result',
+                            imagePath: _croppedPath!,
+                            badge: _typeInfo[_selectedType]!.label,
+                            actions: [
+                              _ActionButton(
+                                icon: Icons.share_rounded,
+                                label: 'Share',
+                                onTap: _sharePhoto,
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _SourceButton(
-                                icon: Icons.camera_alt_rounded,
-                                label: 'Camera',
-                                onTap: _pickFromCamera,
+                              _ActionButton(
+                                icon: Icons.download_rounded,
+                                label: 'Save to Gallery',
+                                gradient: _gradient,
+                                onTap: _saveToGallery,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-
-                  if (_originalPath != null) ...[
-                    const SizedBox(height: 20),
-
-                    // Original preview
-                    _PhotoPreviewSection(
-                      label: 'Original Photo',
-                      imagePath: _originalPath!,
-                      actions: [
-                        _ActionButton(
-                          icon: Icons.crop_rounded,
-                          label: 'Crop to ID Size',
-                          gradient: _gradient,
-                          onTap: _cropPhoto,
-                        ),
-                      ],
-                    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                  ],
-
-                  if (_croppedPath != null) ...[
-                    const SizedBox(height: 20),
-
-                    // Cropped result
-                    _PhotoPreviewSection(
-                      label: 'Cropped Result',
-                      imagePath: _croppedPath!,
-                      badge: _typeInfo[_selectedType]!.label,
-                      actions: [
-                        _ActionButton(
-                          icon: Icons.share_rounded,
-                          label: 'Share',
-                          onTap: _sharePhoto,
-                        ),
-                        _ActionButton(
-                          icon: Icons.download_rounded,
-                          label: 'Save to Gallery',
-                          gradient: _gradient,
-                          onTap: _saveToGallery,
-                        ),
-                      ],
-                    ).animate().fadeIn(delay: 50.ms).scale(begin: const Offset(0.95, 0.95)),
-                  ],
-                ]),
+                            ],
+                          )
+                          .animate()
+                          .fadeIn(delay: 50.ms)
+                          .scale(begin: const Offset(0.95, 0.95)),
+                    ],
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          bottomNavigationBar: _originalPath != null && _croppedPath == null
+              ? BottomActionBar(
+                  gradient: _gradient,
+                  primaryLabel: 'Crop to ID Size',
+                  primaryIcon: Icons.crop_rounded,
+                  enabled: !_isProcessing,
+                  isLoading: _isProcessing,
+                  onPrimary: _cropPhoto,
+                )
+              : null,
         ),
-        bottomNavigationBar: _originalPath != null && _croppedPath == null
-            ? BottomActionBar(
-                gradient: _gradient,
-                primaryLabel: 'Crop to ID Size',
-                primaryIcon: Icons.crop_rounded,
-                enabled: !_isProcessing,
-                isLoading: _isProcessing,
-                onPrimary: _cropPhoto,
-              )
-            : null,
-      ),
-      if (_isProcessing) const ProcessingOverlay(message: 'Cropping Photo...'),
-    ],
-  );
-}
+        if (_isProcessing)
+          const ProcessingOverlay(message: 'Cropping Photo...'),
+      ],
+    );
+  }
 }
 
 // ─── Info / Dimensions Card ────────────────────────────────────────────────
@@ -356,16 +369,18 @@ class _DimensionsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFDC2626).withOpacity(0.12),
+        color: const Color(0xFFDC2626).withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDC2626).withOpacity(0.35)),
+        border: Border.all(
+          color: const Color(0xFFDC2626).withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFDC2626).withOpacity(0.2),
+              color: const Color(0xFFDC2626).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: const Color(0xFFEF4444), size: 20),
@@ -386,7 +401,7 @@ class _DimensionsCard extends StatelessWidget {
               Text(
                 dims,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.55),
+                  color: Colors.white.withValues(alpha: 0.55),
                   fontSize: 12,
                 ),
               ),
@@ -411,7 +426,7 @@ class _IdCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A2332),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: child,
     );
@@ -438,9 +453,9 @@ class _SourceButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Column(
           children: [
@@ -523,10 +538,14 @@ class _PhotoPreviewSection extends StatelessWidget {
             child: Image.file(
               File(imagePath),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: Colors.white.withOpacity(0.05),
+              errorBuilder: (_, _, _) => Container(
+                color: Colors.white.withValues(alpha: 0.05),
                 child: const Center(
-                  child: Icon(Icons.broken_image_rounded, color: Colors.white30, size: 40),
+                  child: Icon(
+                    Icons.broken_image_rounded,
+                    color: Colors.white30,
+                    size: 40,
+                  ),
                 ),
               ),
             ),
@@ -535,10 +554,9 @@ class _PhotoPreviewSection extends StatelessWidget {
         if (actions.isNotEmpty) ...[
           const SizedBox(height: 12),
           Row(
-            children: actions
-                .expand((w) => [w, const SizedBox(width: 10)])
-                .toList()
-              ..removeLast(),
+            children:
+                actions.expand((w) => [w, const SizedBox(width: 10)]).toList()
+                  ..removeLast(),
           ),
         ],
       ],
@@ -569,10 +587,10 @@ class _ActionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         decoration: BoxDecoration(
           gradient: gradient,
-          color: gradient == null ? Colors.white.withOpacity(0.09) : null,
+          color: gradient == null ? Colors.white.withValues(alpha: 0.09) : null,
           borderRadius: BorderRadius.circular(12),
           border: gradient == null
-              ? Border.all(color: Colors.white.withOpacity(0.12))
+              ? Border.all(color: Colors.white.withValues(alpha: 0.12))
               : null,
         ),
         child: Row(

@@ -6,8 +6,7 @@ class AppResult<T> {
 
   const AppResult._({this.data, this.error, required this.isSuccess});
 
-  factory AppResult.success(T data) =>
-      AppResult._(data: data, isSuccess: true);
+  factory AppResult.success(T data) => AppResult._(data: data, isSuccess: true);
 
   factory AppResult.failure(String error) =>
       AppResult._(error: error, isSuccess: false);
@@ -24,12 +23,7 @@ class AppResult<T> {
 }
 
 /// Processing state for async operations
-enum ProcessingState {
-  idle,
-  processing,
-  success,
-  error,
-}
+enum ProcessingState { idle, processing, success, error }
 
 /// File operation result
 class FileOperationResult {
@@ -65,8 +59,5 @@ class OcrBlock {
   final String text;
   final double confidence;
 
-  const OcrBlock({
-    required this.text,
-    required this.confidence,
-  });
+  const OcrBlock({required this.text, required this.confidence});
 }

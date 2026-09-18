@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +10,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -46,7 +44,7 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
   ];
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -65,12 +63,15 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
     try {
       final image = await padState.toImage();
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) throw Exception('Failed to convert signature to bytes');
+      if (byteData == null) {
+        throw Exception('Failed to convert signature to bytes');
+      }
       final signatureBytes = byteData.buffer.asUint8List();
 
-      final outputName =
-          'Signed_${DateTime.now().millisecondsSinceEpoch}';
-      final result = await ref.read(pdfServiceProvider).addSignatureToPdf(
+      final outputName = 'Signed_${DateTime.now().millisecondsSinceEpoch}';
+      final result = await ref
+          .read(pdfServiceProvider)
+          .addSignatureToPdf(
             pdfPath: _pdfPath!,
             signatureBytes: signatureBytes,
             outputName: outputName,
@@ -87,7 +88,9 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
         type: DocumentType.signedPdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(filePath).existsSync() ? File(filePath).lengthSync() : 0,
+        fileSizeBytes: File(filePath).existsSync()
+            ? File(filePath).lengthSync()
+            : 0,
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
 
@@ -111,7 +114,9 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
 
   Future<void> _shareSignedPdf() async {
     if (_signedFilePath == null) return;
-    await Share.shareXFiles([XFile(_signedFilePath!)]);
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(_signedFilePath!)]),
+    );
   }
 
   void _reset() {
@@ -134,14 +139,11 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
                 icon: Icons.draw_rounded,
                 title: 'Sign Document',
                 subtitle: 'Add your signature to a PDF',
-                
               ),
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildStepContent(),
-                  ]),
+                  delegate: SliverChildListDelegate([_buildStepContent()]),
                 ),
               ),
             ],
@@ -171,10 +173,9 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
       children: [
         Text(
           'Select a PDF to Sign',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         FilePickerZone(
@@ -196,14 +197,19 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFF0E7490).withOpacity(0.08),
+            color: const Color(0xFF0E7490).withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF0E7490).withOpacity(0.25)),
+            border: Border.all(
+              color: const Color(0xFF0E7490).withValues(alpha: 0.25),
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.picture_as_pdf_rounded,
-                  color: Color(0xFF0E7490), size: 20),
+              const Icon(
+                Icons.picture_as_pdf_rounded,
+                color: Color(0xFF0E7490),
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -211,15 +217,18 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF0E7490),
-                      ),
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF0E7490),
+                  ),
                 ),
               ),
               GestureDetector(
                 onTap: _reset,
-                child: const Icon(Icons.close_rounded,
-                    color: Color(0xFF0E7490), size: 18),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Color(0xFF0E7490),
+                  size: 18,
+                ),
               ),
             ],
           ),
@@ -229,10 +238,9 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
         // Signature pad
         Text(
           'Sign Here',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 10),
         Container(
@@ -240,13 +248,10 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.grey.shade300,
-              width: 1.5,
-            ),
+            border: Border.all(color: Colors.grey.shade300, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -285,10 +290,7 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
                   left: 16,
                   child: Text(
                     'Sign above the line',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
                   ),
                 ),
               ],
@@ -302,16 +304,18 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
           children: [
             Text(
               'Ink Color:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(width: 12),
-            ..._inkColors.map((color) => _ColorCircle(
-                  color: color,
-                  isSelected: _inkColor == color,
-                  onTap: () => setState(() => _inkColor = color),
-                )),
+            ..._inkColors.map(
+              (color) => _ColorCircle(
+                color: color,
+                isSelected: _inkColor == color,
+                onTap: () => setState(() => _inkColor = color),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -345,7 +349,10 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
                   icon: const Icon(Icons.check_rounded, color: Colors.white),
                   label: const Text(
                     'Apply Signature',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
@@ -377,24 +384,25 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.check_rounded, color: Colors.white, size: 44),
-        )
-            .animate()
-            .scale(begin: const Offset(0, 0), duration: 500.ms, curve: Curves.elasticOut),
+        ).animate().scale(
+          begin: const Offset(0, 0),
+          duration: 500.ms,
+          curve: Curves.elasticOut,
+        ),
         const SizedBox(height: 20),
         Text(
           'Document Signed!',
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
           'Your signature has been applied successfully.',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
         ),
         const SizedBox(height: 32),
         Row(
@@ -430,7 +438,10 @@ class _SignDocumentScreenState extends ConsumerState<SignDocumentScreen> {
                   icon: const Icon(Icons.share_rounded, color: Colors.white),
                   label: const Text(
                     'Share',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
@@ -493,10 +504,10 @@ class _ColorCircle extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.5),
+                    color: color.withValues(alpha: 0.5),
                     blurRadius: 6,
                     spreadRadius: 1,
-                  )
+                  ),
                 ]
               : null,
         ),

@@ -48,7 +48,9 @@ class ToolSliverHeader extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Icon(icon, color: Colors.white, size: 22),
                       ),
@@ -57,14 +59,23 @@ class ToolSliverHeader extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title,
-                                style: const TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
                             if (subtitle != null && subtitle!.isNotEmpty) ...[
                               const SizedBox(height: 2),
-                              Text(subtitle!,
-                                  style: TextStyle(
-                                      fontSize: 13, color: Colors.white.withValues(alpha: 0.85))),
+                              Text(
+                                subtitle!,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -111,11 +122,11 @@ class BottomActionBar extends StatelessWidget {
     this.secondaryLabel,
     this.secondaryIcon,
     this.onSecondary,
-  })  : primaryLabel = primaryLabel ?? label ?? '',
-        primaryIcon = primaryIcon ?? icon ?? Icons.arrow_forward_rounded,
-        enabled = enabled ?? true,
-        isLoading = isLoading ?? false,
-        onPrimary = onPrimary ?? onPressed ?? _noop;
+  }) : primaryLabel = primaryLabel ?? label ?? '',
+       primaryIcon = primaryIcon ?? icon ?? Icons.arrow_forward_rounded,
+       enabled = enabled ?? true,
+       isLoading = isLoading ?? false,
+       onPrimary = onPrimary ?? onPressed ?? _noop;
 
   static void _noop() {}
 
@@ -123,10 +134,19 @@ class BottomActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
-        border: Border(top: BorderSide(color: isDark ? AppTheme.borderDark : AppTheme.borderLight)),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -143,40 +163,63 @@ class BottomActionBar extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
                 gradient: enabled ? gradient : null,
-                color: enabled ? null : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                color: enabled
+                    ? null
+                    : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: enabled
-                    ? [BoxShadow(
-                        color: gradient.colors.first.withValues(alpha: 0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      )]
+                    ? [
+                        BoxShadow(
+                          color: gradient.colors.first.withValues(alpha: 0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ]
                     : null,
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: enabled && !isLoading ? () { HapticFeedback.mediumImpact(); onPrimary(); } : null,
+                  onTap: enabled && !isLoading
+                      ? () {
+                          HapticFeedback.mediumImpact();
+                          onPrimary();
+                        }
+                      : null,
                   borderRadius: BorderRadius.circular(16),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Center(
                       child: isLoading
                           ? const SizedBox(
-                              width: 22, height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
                             )
                           : Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(primaryIcon,
-                                    color: enabled ? Colors.white : AppTheme.textTertiary, size: 20),
+                                Icon(
+                                  primaryIcon,
+                                  color: enabled
+                                      ? Colors.white
+                                      : AppTheme.textTertiary,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 8),
-                                Text(primaryLabel,
-                                    style: TextStyle(
-                                        color: enabled ? Colors.white : AppTheme.textTertiary,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 15)),
+                                Text(
+                                  primaryLabel,
+                                  style: TextStyle(
+                                    color: enabled
+                                        ? Colors.white
+                                        : AppTheme.textTertiary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
                               ],
                             ),
                     ),
@@ -212,10 +255,15 @@ class FilePickerZone extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasFile = selectedPath != null;
-    final name = hasFile ? selectedPath!.split('/').last.split('\\').last : null;
+    final name = hasFile
+        ? selectedPath!.split('/').last.split('\\').last
+        : null;
 
     return GestureDetector(
-      onTap: () { HapticFeedback.lightImpact(); onTap(); },
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(24),
@@ -225,7 +273,9 @@ class FilePickerZone extends StatelessWidget {
               : (isDark ? AppTheme.cardDark2 : const Color(0xFFF9FAFB)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: hasFile ? gradient.colors.first.withValues(alpha: 0.5) : AppTheme.borderLight,
+            color: hasFile
+                ? gradient.colors.first.withValues(alpha: 0.5)
+                : AppTheme.borderLight,
             width: hasFile ? 1.5 : 1,
             style: hasFile ? BorderStyle.solid : BorderStyle.solid,
           ),
@@ -237,11 +287,15 @@ class FilePickerZone extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 gradient: hasFile ? gradient : null,
-                color: hasFile ? null : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                color: hasFile
+                    ? null
+                    : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
-                hasFile ? Icons.check_circle_rounded : Icons.upload_file_rounded,
+                hasFile
+                    ? Icons.check_circle_rounded
+                    : Icons.upload_file_rounded,
                 color: hasFile ? Colors.white : AppTheme.textTertiary,
                 size: 26,
               ),
@@ -260,9 +314,11 @@ class FilePickerZone extends StatelessWidget {
             ),
             if (!hasFile) ...[
               const SizedBox(height: 4),
-              Text(accept,
-                  style: TextStyle(fontSize: 12, color: AppTheme.textTertiary),
-                  textAlign: TextAlign.center),
+              Text(
+                accept,
+                style: TextStyle(fontSize: 12, color: AppTheme.textTertiary),
+                textAlign: TextAlign.center,
+              ),
             ],
           ],
         ),
@@ -297,82 +353,130 @@ class ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow(gradient.colors.first),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 40),
-          const SizedBox(height: 10),
-          Text(title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(subtitle!,
-                style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8)),
-                textAlign: TextAlign.center),
-          ],
-          const SizedBox(height: 16),
-          Row(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: AppTheme.cardShadow(gradient.colors.first),
+          ),
+          child: Column(
             children: [
-              Expanded(
-                child: _btn(
-                  icon: Icons.share_rounded,
-                  label: 'Share',
-                    onTap: onShare ?? () async {
-                      await Share.shareXFiles([XFile(path)]);
-                    },
-                  outline: true,
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 40,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
                 ),
               ),
-              if (viewRoute != null || onView != null) ...[
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _btn(
-                    icon: Icons.visibility_rounded,
-                    label: 'View',
-                    onTap: () {
-                      if (onView != null) {
-                        onView!();
-                      } else if (viewRoute != null) {
-                        context.push(viewRoute!, extra: viewExtra ?? {'filePath': path, 'title': title});
-                      }
-                    },
-                    outline: false,
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _btn(
+                      icon: Icons.share_rounded,
+                      label: 'Share',
+                      onTap:
+                          onShare ??
+                          () async {
+                            await SharePlus.instance.share(
+                              ShareParams(files: [XFile(path)]),
+                            );
+                          },
+                      outline: true,
+                    ),
+                  ),
+                  if (viewRoute != null || onView != null) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _btn(
+                        icon: Icons.visibility_rounded,
+                        label: 'View',
+                        onTap: () {
+                          if (onView != null) {
+                            onView!();
+                          } else if (viewRoute != null) {
+                            context.push(
+                              viewRoute!,
+                              extra:
+                                  viewExtra ??
+                                  {'filePath': path, 'title': title},
+                            );
+                          }
+                        },
+                        outline: false,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95), duration: 400.ms, curve: Curves.easeOutBack);
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .scale(
+          begin: const Offset(0.95, 0.95),
+          duration: 400.ms,
+          curve: Curves.easeOutBack,
+        );
   }
 
-  Widget _btn({required IconData icon, required String label, required VoidCallback onTap, required bool outline}) {
+  Widget _btn({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool outline,
+  }) {
     return GestureDetector(
-      onTap: () { HapticFeedback.lightImpact(); onTap(); },
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: outline ? Colors.white.withValues(alpha: 0.15) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: outline ? Border.all(color: Colors.white.withValues(alpha: 0.4)) : null,
+          border: outline
+              ? Border.all(color: Colors.white.withValues(alpha: 0.4))
+              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: outline ? Colors.white : gradient.colors.first),
+            Icon(
+              icon,
+              size: 16,
+              color: outline ? Colors.white : gradient.colors.first,
+            ),
             const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: outline ? Colors.white : gradient.colors.first)),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: outline ? Colors.white : gradient.colors.first,
+              ),
+            ),
           ],
         ),
       ),
@@ -406,24 +510,45 @@ class SuccessSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 36, height: 4, margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: AppTheme.textTertiary.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Container(
-              width: 72, height: 72,
-              decoration: BoxDecoration(gradient: gradient, shape: BoxShape.circle,
-                  boxShadow: AppTheme.cardShadow(gradient.colors.first)),
-              child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: gradient,
+                shape: BoxShape.circle,
+                boxShadow: AppTheme.cardShadow(gradient.colors.first),
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 36,
+              ),
             ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
             const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 4),
-            Text(subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
-                maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+            Text(
+              subtitle,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -432,7 +557,9 @@ class SuccessSheet extends StatelessWidget {
                     icon: const Icon(Icons.share_rounded, size: 18),
                     label: const Text('Share'),
                     onPressed: () async {
-                      await Share.shareXFiles([XFile(path)]);
+                      await SharePlus.instance.share(
+                        ShareParams(files: [XFile(path)]),
+                      );
                     },
                   ),
                 ),
@@ -452,8 +579,14 @@ class SuccessSheet extends StatelessWidget {
                         child: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
                           child: Center(
-                            child: Text('Done',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                            child: Text(
+                              'Done',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
                           ),
                         ),
                       ),

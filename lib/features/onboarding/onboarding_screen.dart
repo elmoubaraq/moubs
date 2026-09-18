@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/storage_service.dart';
-import '../../core/theme/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -22,7 +21,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   static const _pages = [
     _OnboardPage(
       title: 'Scan Anything,\nAnywhere',
-      subtitle: 'Capture documents with your camera. Smart edge detection and auto-enhancement make every scan crystal clear.',
+      subtitle:
+          'Capture documents with your camera. Smart edge detection and auto-enhancement make every scan crystal clear.',
       icon: Icons.document_scanner_rounded,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -35,7 +35,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     _OnboardPage(
       title: 'PDF Powerhouse\nat Your Fingertips',
-      subtitle: 'Merge, split, compress, encrypt and watermark PDFs instantly. Everything you need, nothing you don\'t.',
+      subtitle:
+          'Merge, split, compress, encrypt and watermark PDFs instantly. Everything you need, nothing you don\'t.',
       icon: Icons.picture_as_pdf_rounded,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -48,7 +49,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     _OnboardPage(
       title: 'Sign & Share\nin Seconds',
-      subtitle: 'Draw your signature directly on documents. Share instantly via email, WhatsApp, or save to your device.',
+      subtitle:
+          'Draw your signature directly on documents. Share instantly via email, WhatsApp, or save to your device.',
       icon: Icons.draw_rounded,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -61,7 +63,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     _OnboardPage(
       title: 'Smart OCR\nText Extraction',
-      subtitle: 'Extract text from any image or scanned document with AI-powered accuracy. Copy, edit, and export in one tap.',
+      subtitle:
+          'Extract text from any image or scanned document with AI-powered accuracy. Copy, edit, and export in one tap.',
       icon: Icons.auto_awesome_rounded,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -199,78 +202,97 @@ class _PageContent extends StatelessWidget {
         children: [
           // Animated floating icon
           AnimatedBuilder(
-            animation: bgAnim,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, -8 + bgAnim.value * 16),
-                child: child,
-              );
-            },
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 40,
-                    spreadRadius: 10,
+                animation: bgAnim,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, -8 + bgAnim.value * 16),
+                    child: child,
+                  );
+                },
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 40,
+                        spreadRadius: 10,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(page.icon, size: 64, color: Colors.white),
-                    const SizedBox(height: 4),
-                    Text(page.emoji, style: const TextStyle(fontSize: 28)),
-                  ],
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(page.icon, size: 64, color: Colors.white),
+                        const SizedBox(height: 4),
+                        Text(page.emoji, style: const TextStyle(fontSize: 28)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ).animate(key: ValueKey(page.title))
-              .scale(begin: const Offset(0.6, 0.6), duration: 700.ms, curve: Curves.elasticOut)
+              )
+              .animate(key: ValueKey(page.title))
+              .scale(
+                begin: const Offset(0.6, 0.6),
+                duration: 700.ms,
+                curve: Curves.elasticOut,
+              )
               .fadeIn(duration: 400.ms),
 
           const SizedBox(height: 48),
 
           // Title
           Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 1.2,
-              letterSpacing: -0.5,
-            ),
-          ).animate(key: ValueKey('t${page.title}'))
+                page.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.2,
+                  letterSpacing: -0.5,
+                ),
+              )
+              .animate(key: ValueKey('t${page.title}'))
               .fadeIn(delay: 150.ms, duration: 500.ms)
-              .slideY(begin: 0.3, end: 0, delay: 150.ms, duration: 500.ms, curve: Curves.easeOutCubic),
+              .slideY(
+                begin: 0.3,
+                end: 0,
+                delay: 150.ms,
+                duration: 500.ms,
+                curve: Curves.easeOutCubic,
+              ),
 
           const SizedBox(height: 16),
 
           // Subtitle
           Text(
-            page.subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.80),
-              height: 1.6,
-              fontWeight: FontWeight.w400,
-            ),
-          ).animate(key: ValueKey('s${page.title}'))
+                page.subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.80),
+                  height: 1.6,
+                  fontWeight: FontWeight.w400,
+                ),
+              )
+              .animate(key: ValueKey('s${page.title}'))
               .fadeIn(delay: 250.ms, duration: 500.ms)
-              .slideY(begin: 0.3, end: 0, delay: 250.ms, duration: 500.ms, curve: Curves.easeOutCubic),
+              .slideY(
+                begin: 0.3,
+                end: 0,
+                delay: 250.ms,
+                duration: 500.ms,
+                curve: Curves.easeOutCubic,
+              ),
         ],
       ),
     );
@@ -310,7 +332,9 @@ class _BottomControls extends StatelessWidget {
                 width: active ? 28 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: active ? Colors.white : Colors.white.withValues(alpha: 0.35),
+                  color: active
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -355,7 +379,9 @@ class _BottomControls extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Icon(
-                          isLast ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
+                          isLast
+                              ? Icons.rocket_launch_rounded
+                              : Icons.arrow_forward_rounded,
                           color: const Color(0xFF111827),
                           size: 20,
                         ),

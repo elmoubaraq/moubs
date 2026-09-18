@@ -31,20 +31,32 @@ class EmptyStateWidget extends StatelessWidget {
         children: [
           // Animated icon container
           Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: isDark ? 0.12 : 0.08),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppTheme.primary.withValues(alpha: isDark ? 0.2 : 0.15),
-                width: 1.5,
-              ),
-            ),
-            child: Icon(icon, size: 44, color: AppTheme.primary.withValues(alpha: 0.6)),
-          )
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(
+                    alpha: isDark ? 0.12 : 0.08,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.primary.withValues(
+                      alpha: isDark ? 0.2 : 0.15,
+                    ),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  size: 44,
+                  color: AppTheme.primary.withValues(alpha: 0.6),
+                ),
+              )
               .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scale(begin: const Offset(0.95, 0.95), end: const Offset(1.0, 1.0), duration: 2.seconds),
+              .scale(
+                begin: const Offset(0.95, 0.95),
+                end: const Offset(1.0, 1.0),
+                duration: 2.seconds,
+              ),
 
           const SizedBox(height: 24),
 
@@ -71,11 +83,18 @@ class EmptyStateWidget extends StatelessWidget {
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: onAction,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(actionLabel!),
-            ).animate().fadeIn(delay: 200.ms, duration: 400.ms)
-                .scale(begin: const Offset(0.9, 0.9), delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
+                  onPressed: onAction,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(actionLabel!),
+                )
+                .animate()
+                .fadeIn(delay: 200.ms, duration: 400.ms)
+                .scale(
+                  begin: const Offset(0.9, 0.9),
+                  delay: 200.ms,
+                  duration: 400.ms,
+                  curve: Curves.easeOutBack,
+                ),
           ],
         ],
       ),
@@ -88,11 +107,7 @@ class ErrorStateWidget extends StatelessWidget {
   final String? message;
   final VoidCallback? onRetry;
 
-  const ErrorStateWidget({
-    super.key,
-    this.message,
-    this.onRetry,
-  });
+  const ErrorStateWidget({super.key, this.message, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -108,14 +123,20 @@ class ErrorStateWidget extends StatelessWidget {
               color: AppTheme.error.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.error_outline_rounded, size: 36, color: AppTheme.error),
+            child: const Icon(
+              Icons.error_outline_rounded,
+              size: 36,
+              color: AppTheme.error,
+            ),
           ).animate().shake(duration: 500.ms, delay: 100.ms),
 
           const SizedBox(height: 20),
 
           Text(
             'Something went wrong',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
           ),
 
@@ -123,7 +144,9 @@ class ErrorStateWidget extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               message!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -190,17 +213,24 @@ class ProcessingOverlay extends StatelessWidget {
                             value: progress,
                             strokeWidth: 5,
                             backgroundColor: AppTheme.borderLight,
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppTheme.primary,
+                            ),
                           ),
                           Text(
                             '${(progress! * 100).toInt()}%',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       )
                     : const CircularProgressIndicator(
                         strokeWidth: 5,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primary,
+                        ),
                       ),
               ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
 
@@ -208,7 +238,9 @@ class ProcessingOverlay extends StatelessWidget {
 
               Text(
                 message,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(delay: 100.ms),
 
@@ -216,7 +248,9 @@ class ProcessingOverlay extends StatelessWidget {
 
               Text(
                 'Please wait...',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textTertiary),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppTheme.textTertiary),
               ),
             ],
           ),

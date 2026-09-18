@@ -21,7 +21,8 @@ class AppConstants {
   static const String totalProcessedKey = 'total_processed';
 
   // Ad Placement
-  static const int interstitialFrequency = 3; // Show interstitial every N exports
+  static const int interstitialFrequency =
+      3; // Show interstitial every N exports
   static const int maxFreeExportsPerDay = 999999;
 
   // File limits

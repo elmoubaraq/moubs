@@ -63,11 +63,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
 
     setState(() => _processing = true);
     try {
-      final result = await ref.read(pdfServiceProvider).createPdfFromText(
-            text: text,
-            fileName: name,
-            fontSize: _fontSize,
-          );
+      final result = await ref
+          .read(pdfServiceProvider)
+          .createPdfFromText(text: text, fileName: name, fontSize: _fontSize);
       if (!result.isSuccess || result.outputPath == null) {
         throw Exception(result.error ?? 'Operation failed');
       }
@@ -79,7 +77,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
         type: DocumentType.textPdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(filePath).existsSync() ? File(filePath).lengthSync() : 0,
+        fileSizeBytes: File(filePath).existsSync()
+            ? File(filePath).lengthSync()
+            : 0,
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
       if (mounted) {
@@ -114,7 +114,6 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
                 icon: Icons.notes_rounded,
                 title: 'Text to PDF',
                 subtitle: 'Type content and export as PDF',
-                
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -137,9 +136,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
                       alignment: Alignment.centerRight,
                       child: Text(
                         '$_charCount characters',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey,
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -166,10 +165,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
       children: [
         Text(
           'Document Name',
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -192,10 +190,10 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF047857).withOpacity(0.06),
+        color: const Color(0xFF047857).withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFF047857).withOpacity(0.2),
+          color: const Color(0xFF047857).withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -205,14 +203,16 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
             children: [
               Text(
                 'Font Size',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF047857),
                   borderRadius: BorderRadius.circular(8),
@@ -244,7 +244,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Text(
@@ -263,10 +265,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
       children: [
         Text(
           'Content',
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Container(
@@ -274,11 +275,13 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.3),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -292,7 +295,8 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
             decoration: const InputDecoration(
               contentPadding: EdgeInsets.all(16),
               border: InputBorder.none,
-              hintText: 'Start typing your document content here…\n\nYou can write paragraphs, notes, or any text you want to convert to a PDF.',
+              hintText:
+                  'Start typing your document content here…\n\nYou can write paragraphs, notes, or any text you want to convert to a PDF.',
             ),
           ),
         ),

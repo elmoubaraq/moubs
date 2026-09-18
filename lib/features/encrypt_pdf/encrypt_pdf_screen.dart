@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
@@ -55,8 +53,8 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
     return score;
   }
 
-    Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+  Future<void> _pickFile() async {
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -66,7 +64,7 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
     });
   }
 
-Future<void> _encrypt() async {
+  Future<void> _encrypt() async {
     if (_filePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a PDF file first')),
@@ -77,8 +75,14 @@ Future<void> _encrypt() async {
 
     setState(() => _isProcessing = true);
     try {
-      final name = 'encrypted_${const Uuid().v4()}.pdf';
-      final result = await ref.read(pdfServiceProvider).encryptPdf(
+      final base = _filePath!
+          .split(RegExp(r'[\\/]'))
+          .last
+          .replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
+      final name = '${base}_protected';
+      final result = await ref
+          .read(pdfServiceProvider)
+          .encryptPdf(
             inputPath: _filePath!,
             password: _passCtrl.text,
             outputName: name,
@@ -97,7 +101,9 @@ Future<void> _encrypt() async {
         type: DocumentType.encryptedPdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(outputPath).existsSync() ? File(outputPath).lengthSync() : 0,
+        fileSizeBytes: File(outputPath).existsSync()
+            ? File(outputPath).lengthSync()
+            : 0,
       );
 
       await ref.read(documentsProvider.notifier).addDocument(doc);
@@ -122,9 +128,9 @@ Future<void> _encrypt() async {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -136,172 +142,214 @@ Future<void> _encrypt() async {
     return Stack(
       children: [
         Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: Form(
-          key: _formKey,
-          child: CustomScrollView(
-            slivers: [
-              ToolSliverHeader(
-                title: 'Encrypt PDF',
-                icon: Icons.lock_rounded,
-                gradient: _gradient,
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Warning card
-                    _WarningCard().animate().fadeIn(delay: 80.ms).slideY(begin: 0.1),
-
-                    const SizedBox(height: 16),
-
-                    FilePickerZone(
-                      selectedPath: _filePath,
-                      hint: 'Select PDF File',
-                      accept: 'PDF files only',
-                      gradient: _gradient,
-                      onTap: _pickFile,
-                    ).animate().fadeIn(delay: 130.ms).slideY(begin: 0.1),
-
-                    const SizedBox(height: 20),
-
-                    // Password fields
-                    _EncryptCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Set Password',
-                            style: TextStyle(
-                              color: AppTheme.textColor(Theme.of(context).brightness == Brightness.dark),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          // Password field
-                          TextFormField(
-                            controller: _passCtrl,
-                            obscureText: !_showPass,
-                            style: TextStyle(color: AppTheme.textColor(Theme.of(context).brightness == Brightness.dark)),
-                            onChanged: (_) => setState(() {}),
-                            decoration: _inputDecoration(
-                              context: context,
-                              hint: 'Enter password',
-                              prefixIcon: Icons.key_rounded,
-                              suffix: IconButton(
-                                icon: Icon(
-                                  _showPass ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                  color: Colors.white54,
-                                  size: 20,
-                                ),
-                                onPressed: () => setState(() => _showPass = !_showPass),
-                              ),
-                            ),
-                            validator: (v) {
-                              if (v == null || v.isEmpty) return 'Password is required';
-                              if (v.length < 4) return 'Minimum 4 characters';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Password strength bar
-                          if (_passCtrl.text.isNotEmpty) ...[
-                            _PasswordStrengthBar(strength: strength),
-                            const SizedBox(height: 12),
-                          ],
-
-                          // Confirm password field
-                          TextFormField(
-                            controller: _confirmCtrl,
-                            obscureText: !_showConfirm,
-                            style: TextStyle(color: AppTheme.textColor(Theme.of(context).brightness == Brightness.dark)),
-                            onChanged: (_) => setState(() {}),
-                            decoration: _inputDecoration(
-                              context: context,
-                              hint: 'Confirm password',
-                              prefixIcon: Icons.lock_outline_rounded,
-                              suffix: IconButton(
-                                icon: Icon(
-                                  _showConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                  color: Colors.white54,
-                                  size: 20,
-                                ),
-                                onPressed: () => setState(() => _showConfirm = !_showConfirm),
-                              ),
-                            ),
-                            validator: (v) {
-                              if (v == null || v.isEmpty) return 'Please confirm your password';
-                              if (v != _passCtrl.text) return 'Passwords do not match';
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 180.ms).slideY(begin: 0.1),
-
-                    const SizedBox(height: 16),
-
-                    // Permissions
-                    _EncryptCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Permissions',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Control what others can do with the encrypted file',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _PermissionTile(
-                            icon: Icons.print_rounded,
-                            label: 'Allow Printing',
-                            subtitle: 'Recipients can print the document',
-                            value: _allowPrinting,
-                            onChanged: (v) => setState(() => _allowPrinting = v),
-                          ),
-                          const Divider(color: Colors.white10, height: 1),
-                          _PermissionTile(
-                            icon: Icons.copy_rounded,
-                            label: 'Allow Copy',
-                            subtitle: 'Recipients can copy text content',
-                            value: _allowCopy,
-                            onChanged: (v) => setState(() => _allowCopy = v),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 230.ms).slideY(begin: 0.1),
-                  ]),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: Form(
+            key: _formKey,
+            child: CustomScrollView(
+              slivers: [
+                ToolSliverHeader(
+                  title: 'Encrypt PDF',
+                  icon: Icons.lock_rounded,
+                  gradient: _gradient,
                 ),
-              ),
-            ],
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Warning card
+                      _WarningCard()
+                          .animate()
+                          .fadeIn(delay: 80.ms)
+                          .slideY(begin: 0.1),
+
+                      const SizedBox(height: 16),
+
+                      FilePickerZone(
+                        selectedPath: _filePath,
+                        hint: 'Select PDF File',
+                        accept: 'PDF files only',
+                        gradient: _gradient,
+                        onTap: _pickFile,
+                      ).animate().fadeIn(delay: 130.ms).slideY(begin: 0.1),
+
+                      const SizedBox(height: 20),
+
+                      // Password fields
+                      _EncryptCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Set Password',
+                              style: TextStyle(
+                                color: AppTheme.textColor(
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark,
+                                ),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            // Password field
+                            TextFormField(
+                              controller: _passCtrl,
+                              obscureText: !_showPass,
+                              style: TextStyle(
+                                color: AppTheme.textColor(
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark,
+                                ),
+                              ),
+                              onChanged: (_) => setState(() {}),
+                              decoration: _inputDecoration(
+                                context: context,
+                                hint: 'Enter password',
+                                prefixIcon: Icons.key_rounded,
+                                suffix: IconButton(
+                                  icon: Icon(
+                                    _showPass
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    size: 20,
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _showPass = !_showPass),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Password is required';
+                                }
+                                if (v.length < 4) return 'Minimum 4 characters';
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Password strength bar
+                            if (_passCtrl.text.isNotEmpty) ...[
+                              _PasswordStrengthBar(strength: strength),
+                              const SizedBox(height: 12),
+                            ],
+
+                            // Confirm password field
+                            TextFormField(
+                              controller: _confirmCtrl,
+                              obscureText: !_showConfirm,
+                              style: TextStyle(
+                                color: AppTheme.textColor(
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark,
+                                ),
+                              ),
+                              onChanged: (_) => setState(() {}),
+                              decoration: _inputDecoration(
+                                context: context,
+                                hint: 'Confirm password',
+                                prefixIcon: Icons.lock_outline_rounded,
+                                suffix: IconButton(
+                                  icon: Icon(
+                                    _showConfirm
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _showConfirm = !_showConfirm,
+                                  ),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (v != _passCtrl.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 180.ms).slideY(begin: 0.1),
+
+                      const SizedBox(height: 16),
+
+                      // Permissions
+                      _EncryptCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Permissions',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Control what others can do with the encrypted file',
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _PermissionTile(
+                              icon: Icons.print_rounded,
+                              label: 'Allow Printing',
+                              subtitle: 'Recipients can print the document',
+                              value: _allowPrinting,
+                              onChanged: (v) =>
+                                  setState(() => _allowPrinting = v),
+                            ),
+                            Divider(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                              height: 1,
+                            ),
+                            _PermissionTile(
+                              icon: Icons.copy_rounded,
+                              label: 'Allow Copy',
+                              subtitle: 'Recipients can copy text content',
+                              value: _allowCopy,
+                              onChanged: (v) => setState(() => _allowCopy = v),
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 230.ms).slideY(begin: 0.1),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: BottomActionBar(
+            gradient: _gradient,
+            primaryLabel: 'Encrypt PDF',
+            primaryIcon: Icons.lock_rounded,
+            enabled: _filePath != null && !_isProcessing,
+            isLoading: _isProcessing,
+            onPrimary: _encrypt,
           ),
         ),
-        bottomNavigationBar: BottomActionBar(
-          gradient: _gradient,
-          primaryLabel: 'Encrypt PDF',
-          primaryIcon: Icons.lock_rounded,
-          enabled: _filePath != null && !_isProcessing,
-          isLoading: _isProcessing,
-          onPrimary: _encrypt,
-        ),
-      ),
-      if (_isProcessing) const ProcessingOverlay(message: 'Encrypting PDF...'),
-    ],
-  );
-}
+        if (_isProcessing)
+          const ProcessingOverlay(message: 'Encrypting PDF...'),
+      ],
+    );
+  }
 
   InputDecoration _inputDecoration({
     required BuildContext context,
@@ -312,11 +360,19 @@ Future<void> _encrypt() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: isDark ? Colors.white38 : AppTheme.textTertiary),
-      prefixIcon: Icon(prefixIcon, color: isDark ? Colors.white60 : AppTheme.textTertiary, size: 20),
+      hintStyle: TextStyle(
+        color: isDark ? Colors.white38 : AppTheme.textTertiary,
+      ),
+      prefixIcon: Icon(
+        prefixIcon,
+        color: isDark ? Colors.white60 : AppTheme.textTertiary,
+        size: 20,
+      ),
       suffixIcon: suffix,
       filled: true,
-      fillColor: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+      fillColor: isDark
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.black.withValues(alpha: 0.04),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -349,7 +405,11 @@ class _WarningCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.15 : 0.1),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.35 : 0.25)),
+        border: Border.all(
+          color: const Color(
+            0xFFF59E0B,
+          ).withValues(alpha: isDark ? 0.35 : 0.25),
+        ),
       ),
       child: Row(
         children: [
@@ -432,7 +492,9 @@ class _PasswordStrengthBar extends StatelessWidget {
                 height: 4,
                 margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
                 decoration: BoxDecoration(
-                  color: filled ? colors[strength] : Colors.white.withOpacity(0.12),
+                  color: filled
+                      ? colors[strength]
+                      : Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -479,14 +541,25 @@ class _PermissionTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-      secondary: Icon(icon, color: isDark ? Colors.white70 : AppTheme.textSecondary, size: 20),
+      secondary: Icon(
+        icon,
+        color: isDark ? Colors.white70 : AppTheme.textSecondary,
+        size: 20,
+      ),
       title: Text(
         label,
-        style: TextStyle(color: AppTheme.textColor(isDark), fontSize: 14, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: AppTheme.textColor(isDark),
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: isDark ? Colors.white38 : AppTheme.textTertiary, fontSize: 12),
+        style: TextStyle(
+          color: isDark ? Colors.white38 : AppTheme.textTertiary,
+          fontSize: 12,
+        ),
       ),
       value: value,
       onChanged: onChanged,

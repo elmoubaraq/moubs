@@ -1,15 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -31,8 +26,8 @@ class _PdfToImageScreenState extends ConsumerState<PdfToImageScreen> {
     end: Alignment.bottomRight,
   );
 
-    Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+  Future<void> _pickFile() async {
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -43,7 +38,7 @@ class _PdfToImageScreenState extends ConsumerState<PdfToImageScreen> {
     });
   }
 
-Future<void> _extractImages() async {
+  Future<void> _extractImages() async {
     if (_filePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a PDF file first')),
@@ -57,9 +52,9 @@ Future<void> _extractImages() async {
     });
 
     try {
-      final result = await ref.read(pdfServiceProvider).pdfToImages(
-            pdfPath: _filePath!,
-          );
+      final result = await ref
+          .read(pdfServiceProvider)
+          .pdfToImages(pdfPath: _filePath!);
 
       if (mounted) {
         setState(() {
@@ -70,23 +65,25 @@ Future<void> _extractImages() async {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
 
   Future<void> _shareAll() async {
     if (_imagePaths.isEmpty) return;
-    await Share.shareXFiles(
-      _imagePaths.map((p) => XFile(p)).toList(),
-      text: 'Extracted images from PDF',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: _imagePaths.map((p) => XFile(p)).toList(),
+        text: 'Extracted images from PDF',
+      ),
     );
   }
 
   Future<void> _shareSingle(String path) async {
-    await Share.shareXFiles([XFile(path)]);
+    await SharePlus.instance.share(ShareParams(files: [XFile(path)]));
   }
 
   @override
@@ -94,68 +91,72 @@ Future<void> _extractImages() async {
     return Stack(
       children: [
         Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: CustomScrollView(
-          slivers: [
-            ToolSliverHeader(
-              title: 'PDF to Images',
-              icon: Icons.photo_library_rounded,
-              gradient: _gradient,
-              actions: _imagePaths.isNotEmpty
-                  ? [
-                      IconButton(
-                        tooltip: 'Share all images',
-                        icon: const Icon(Icons.share_rounded, color: Colors.white),
-                        onPressed: _shareAll,
-                      ),
-                    ]
-                  : null,
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  FilePickerZone(
-                    selectedPath: _filePath,
-                    hint: 'Select PDF File',
-                    accept: 'PDF files only',
-                    gradient: _gradient,
-                    onTap: _pickFile,
-                  ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-
-                  if (_imagePaths.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _ResultsHeader(
-                      count: _imagePaths.length,
-                      onShareAll: _shareAll,
-                    ).animate().fadeIn(delay: 50.ms),
-                    const SizedBox(height: 12),
-                    _ImageGrid(
-                      imagePaths: _imagePaths,
-                      onShare: _shareSingle,
-                    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05),
-                  ] else if (_filePath != null) ...[
-                    const SizedBox(height: 24),
-                    _ExtractHint().animate().fadeIn(delay: 150.ms),
-                  ],
-                ]),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: CustomScrollView(
+            slivers: [
+              ToolSliverHeader(
+                title: 'PDF to Images',
+                icon: Icons.photo_library_rounded,
+                gradient: _gradient,
+                actions: _imagePaths.isNotEmpty
+                    ? [
+                        IconButton(
+                          tooltip: 'Share all images',
+                          icon: const Icon(
+                            Icons.share_rounded,
+                            color: Colors.white,
+                          ),
+                          onPressed: _shareAll,
+                        ),
+                      ]
+                    : null,
               ),
-            ),
-          ],
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    FilePickerZone(
+                      selectedPath: _filePath,
+                      hint: 'Select PDF File',
+                      accept: 'PDF files only',
+                      gradient: _gradient,
+                      onTap: _pickFile,
+                    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+
+                    if (_imagePaths.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      _ResultsHeader(
+                        count: _imagePaths.length,
+                        onShareAll: _shareAll,
+                      ).animate().fadeIn(delay: 50.ms),
+                      const SizedBox(height: 12),
+                      _ImageGrid(
+                        imagePaths: _imagePaths,
+                        onShare: _shareSingle,
+                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05),
+                    ] else if (_filePath != null) ...[
+                      const SizedBox(height: 24),
+                      _ExtractHint().animate().fadeIn(delay: 150.ms),
+                    ],
+                  ]),
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: BottomActionBar(
+            gradient: _gradient,
+            primaryLabel: 'Extract Images',
+            primaryIcon: Icons.photo_library_rounded,
+            enabled: _filePath != null && !_isProcessing,
+            isLoading: _isProcessing,
+            onPrimary: _extractImages,
+          ),
         ),
-        bottomNavigationBar: BottomActionBar(
-          gradient: _gradient,
-          primaryLabel: 'Extract Images',
-          primaryIcon: Icons.photo_library_rounded,
-          enabled: _filePath != null && !_isProcessing,
-          isLoading: _isProcessing,
-          onPrimary: _extractImages,
-        ),
-      ),
-      if (_isProcessing) const ProcessingOverlay(message: 'Extracting Images...'),
-    ],
-  );
-}
+        if (_isProcessing)
+          const ProcessingOverlay(message: 'Extracting Images...'),
+      ],
+    );
+  }
 }
 
 // ─── Results Header ────────────────────────────────────────────────────────
@@ -192,10 +193,18 @@ class _ResultsHeader extends StatelessWidget {
         const Spacer(),
         TextButton.icon(
           onPressed: onShareAll,
-          icon: const Icon(Icons.share_rounded, size: 16, color: Color(0xFFEC4899)),
+          icon: const Icon(
+            Icons.share_rounded,
+            size: 16,
+            color: Color(0xFFEC4899),
+          ),
           label: const Text(
             'Share All',
-            style: TextStyle(color: Color(0xFFEC4899), fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Color(0xFFEC4899),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -225,10 +234,10 @@ class _ImageGrid extends StatelessWidget {
       itemCount: imagePaths.length,
       itemBuilder: (context, index) {
         return _ImageThumbnailCard(
-          path: imagePaths[index],
-          pageNumber: index + 1,
-          onShare: () => onShare(imagePaths[index]),
-        )
+              path: imagePaths[index],
+              pageNumber: index + 1,
+              onShare: () => onShare(imagePaths[index]),
+            )
             .animate(delay: Duration(milliseconds: 60 * index))
             .fadeIn()
             .scale(begin: const Offset(0.92, 0.92));
@@ -256,10 +265,10 @@ class _ImageThumbnailCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A2332),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -273,10 +282,14 @@ class _ImageThumbnailCard extends StatelessWidget {
             child: Image.file(
               File(path),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: Colors.white.withOpacity(0.05),
+              errorBuilder: (_, _, _) => Container(
+                color: Colors.white.withValues(alpha: 0.05),
                 child: const Center(
-                  child: Icon(Icons.broken_image_rounded, color: Colors.white30, size: 40),
+                  child: Icon(
+                    Icons.broken_image_rounded,
+                    color: Colors.white30,
+                    size: 40,
+                  ),
                 ),
               ),
             ),
@@ -284,7 +297,7 @@ class _ImageThumbnailCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
             child: Row(
               children: [
@@ -333,9 +346,11 @@ class _ExtractHint extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF9333EA).withOpacity(0.1),
+        color: const Color(0xFF9333EA).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF9333EA).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF9333EA).withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         children: [
@@ -343,7 +358,11 @@ class _ExtractHint extends StatelessWidget {
             shaderCallback: (bounds) => const LinearGradient(
               colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
             ).createShader(bounds),
-            child: const Icon(Icons.photo_library_rounded, size: 40, color: Colors.white),
+            child: const Icon(
+              Icons.photo_library_rounded,
+              size: 40,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -359,7 +378,7 @@ class _ExtractHint extends StatelessWidget {
             'Each page of your PDF will be converted to a high-quality image.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 13,
               height: 1.4,
             ),

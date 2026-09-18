@@ -16,6 +16,8 @@ import '../../features/watermark_pdf/watermark_pdf_screen.dart';
 import '../../features/encrypt_pdf/encrypt_pdf_screen.dart';
 import '../../features/pdf_to_image/pdf_to_image_screen.dart';
 import '../../features/file_manager/file_manager_screen.dart';
+import '../../features/organize_pdf/organize_pdf_screen.dart';
+import '../../features/unlock_pdf/unlock_pdf_screen.dart';
 
 import '../../features/pdf_viewer/pdf_viewer_screen.dart';
 import '../../features/shell/app_shell.dart';
@@ -40,8 +42,8 @@ class AppRouter {
             child: const OnboardingScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
 
@@ -57,8 +59,8 @@ class AppRouter {
                 child: const HomeScreen(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
+                      return FadeTransition(opacity: animation, child: child);
+                    },
               ),
             ),
             GoRoute(
@@ -68,8 +70,8 @@ class AppRouter {
                 child: const FileManagerScreen(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
+                      return FadeTransition(opacity: animation, child: child);
+                    },
               ),
             ),
             GoRoute(
@@ -79,8 +81,8 @@ class AppRouter {
                 child: const SettingsScreen(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
+                      return FadeTransition(opacity: animation, child: child);
+                    },
               ),
             ),
           ],
@@ -89,87 +91,73 @@ class AppRouter {
         // Full-screen feature routes
         GoRoute(
           path: '/scanner',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const ScannerScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const ScannerScreen()),
         ),
         GoRoute(
           path: '/image-to-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const ImageToPdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const ImageToPdfScreen()),
         ),
         GoRoute(
           path: '/text-to-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const TextToPdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const TextToPdfScreen()),
         ),
         GoRoute(
           path: '/merge-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const MergePdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const MergePdfScreen()),
         ),
         GoRoute(
           path: '/compress-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const CompressPdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const CompressPdfScreen()),
         ),
         GoRoute(
           path: '/split-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const SplitPdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const SplitPdfScreen()),
         ),
         GoRoute(
           path: '/watermark-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const WatermarkPdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const WatermarkPdfScreen()),
         ),
         GoRoute(
           path: '/encrypt-pdf',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const EncryptPdfScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const EncryptPdfScreen()),
+        ),
+        GoRoute(
+          path: '/unlock-pdf',
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const UnlockPdfScreen()),
+        ),
+        GoRoute(
+          path: '/organize-pdf',
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const OrganizePdfScreen()),
         ),
         GoRoute(
           path: '/pdf-to-image',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const PdfToImageScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const PdfToImageScreen()),
         ),
         GoRoute(
           path: '/sign-document',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const SignDocumentScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const SignDocumentScreen()),
         ),
         GoRoute(
           path: '/id-photo',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const IdPhotoScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const IdPhotoScreen()),
         ),
         GoRoute(
           path: '/ocr',
-          pageBuilder: (context, state) => _slideTransition(
-            state,
-            const OcrScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              _slideTransition(state, const OcrScreen()),
         ),
 
         GoRoute(
@@ -191,19 +179,18 @@ class AppRouter {
   }
 
   static CustomTransitionPage _slideTransition(
-      GoRouterState state, Widget child) {
+    GoRouterState state,
+    Widget child,
+  ) {
     return CustomTransitionPage(
       key: state.pageKey,
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
+          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         );
       },

@@ -32,12 +32,14 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bgColor = backgroundColor ??
+    final bgColor =
+        backgroundColor ??
         (isDark
             ? Colors.white.withValues(alpha: 0.06)
             : Colors.white.withValues(alpha: 0.75));
 
-    final border = borderColor ??
+    final border =
+        borderColor ??
         (isDark
             ? Colors.white.withValues(alpha: 0.12)
             : Colors.white.withValues(alpha: 0.9));
@@ -60,10 +62,17 @@ class GlassCard extends StatelessWidget {
     );
 
     if (margin != null) {
-      return Container(margin: margin, child: onTap != null ? GestureDetector(onTap: onTap, child: content) : content);
+      return Container(
+        margin: margin,
+        child: onTap != null
+            ? GestureDetector(onTap: onTap, child: content)
+            : content,
+      );
     }
 
-    return onTap != null ? GestureDetector(onTap: onTap, child: content) : content;
+    return onTap != null
+        ? GestureDetector(onTap: onTap, child: content)
+        : content;
   }
 }
 
@@ -191,7 +200,9 @@ class ToolIconContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(size * 0.3),
         boxShadow: [
           BoxShadow(
-            color: (gradient as LinearGradient).colors.first.withValues(alpha: 0.35),
+            color: (gradient as LinearGradient).colors.first.withValues(
+              alpha: 0.35,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

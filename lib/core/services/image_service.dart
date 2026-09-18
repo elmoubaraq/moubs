@@ -30,7 +30,10 @@ class ImageService {
       final targetHeight = original.height;
 
       // Center crop
-      final x = ((original.width - targetWidth) / 2).round().clamp(0, original.width);
+      final x = ((original.width - targetWidth) / 2).round().clamp(
+        0,
+        original.width,
+      );
       final y = 0;
       final cropWidth = targetWidth.clamp(1, original.width - x);
 
@@ -77,11 +80,7 @@ class ImageService {
       if (original == null) return null;
 
       // Enhance contrast and brightness for document readability
-      var enhanced = img.adjustColor(
-        original,
-        contrast: 1.3,
-        brightness: 1.05,
-      );
+      var enhanced = img.adjustColor(original, contrast: 1.3, brightness: 1.05);
 
       // Sharpen
       enhanced = img.convolution(
@@ -93,8 +92,7 @@ class ImageService {
       final outputDir = await _getOutputDirectory();
       final outputPath =
           '$outputDir/enhanced_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await File(outputPath)
-          .writeAsBytes(img.encodeJpg(enhanced, quality: 92));
+      await File(outputPath).writeAsBytes(img.encodeJpg(enhanced, quality: 92));
 
       return outputPath;
     } catch (e) {
@@ -151,7 +149,12 @@ enum IdPhotoType {
   final String label;
 
   const IdPhotoType(
-      this.widthMm, this.heightMm, this.widthPx, this.heightPx, this.label);
+    this.widthMm,
+    this.heightMm,
+    this.widthPx,
+    this.heightPx,
+    this.label,
+  );
 
   double get aspectRatio => widthMm / heightMm;
 }

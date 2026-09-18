@@ -6,11 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -31,7 +29,6 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
   int _step = 0;
   String? _imagePath;
   bool _processing = false;
-  String _extractedText = '';
   double _confidence = 0.0;
   late TextEditingController _textCtrl;
 
@@ -65,7 +62,6 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
       result.when(
         success: (data) {
           setState(() {
-            _extractedText = data.text;
             _confidence = data.confidence;
             _textCtrl.text = data.text;
             _step = 2;
@@ -116,16 +112,24 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
         type: DocumentType.ocrResult,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(filePath).existsSync() ? File(filePath).lengthSync() : 0,
+        fileSizeBytes: File(filePath).existsSync()
+            ? File(filePath).lengthSync()
+            : 0,
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
       if (mounted) {
-        context.push('/pdf-viewer', extra: {'filePath': filePath, 'title': name});
+        context.push(
+          '/pdf-viewer',
+          extra: {'filePath': filePath, 'title': name},
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -144,14 +148,13 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
   }
 
   Future<void> _shareText() async {
-    await Share.share(_textCtrl.text);
+    await SharePlus.instance.share(ShareParams(text: _textCtrl.text));
   }
 
   void _reset() {
     setState(() {
       _step = 0;
       _imagePath = null;
-      _extractedText = '';
       _confidence = 0.0;
       _textCtrl.clear();
     });
@@ -175,7 +178,6 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
                 icon: Icons.text_fields_rounded,
                 title: 'OCR Text Extraction',
                 subtitle: 'Extract text from images using AI',
-                
               ),
               SliverPadding(
                 padding: const EdgeInsets.all(16),
@@ -204,9 +206,9 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
       children: [
         Text(
           'Select Image Source',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
@@ -248,10 +250,12 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               height: 200,
               color: Colors.grey.shade200,
-              child: const Center(child: Icon(Icons.image_rounded, size: 48, color: Colors.grey)),
+              child: const Center(
+                child: Icon(Icons.image_rounded, size: 48, color: Colors.grey),
+              ),
             ),
           ),
           Positioned(
@@ -280,9 +284,9 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
           children: [
             Text(
               'Extracted Text',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Spacer(),
             _ConfidenceBadge(confidence: _confidence, color: color),
@@ -294,7 +298,9 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
           child: TextField(
@@ -388,19 +394,17 @@ class _SourceCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 label,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
               Text(
                 description,
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: Colors.grey),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
             ],
           ),
@@ -421,9 +425,9 @@ class _ConfidenceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -1,16 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -87,10 +83,9 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
 
     setState(() => _processing = true);
     try {
-      final result = await ref.read(pdfServiceProvider).createPdfFromImages(
-            imagePaths: _images,
-            fileName: name,
-          );
+      final result = await ref
+          .read(pdfServiceProvider)
+          .createPdfFromImages(imagePaths: _images, fileName: name);
       if (!result.isSuccess || result.outputPath == null) {
         throw Exception(result.error ?? 'Operation failed');
       }
@@ -102,7 +97,9 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
         type: DocumentType.imagePdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(filePath).existsSync() ? File(filePath).lengthSync() : 0,
+        fileSizeBytes: File(filePath).existsSync()
+            ? File(filePath).lengthSync()
+            : 0,
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
       if (mounted) {
@@ -134,7 +131,6 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
                 icon: Icons.image_rounded,
                 title: 'Image to PDF',
                 subtitle: 'Convert images into a PDF document',
-                
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -164,7 +160,8 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
           bottomNavigationBar: _images.isNotEmpty
               ? BottomActionBar(
                   gradient: _gradient,
-                  primaryLabel: 'Create PDF (${_images.length} image${_images.length == 1 ? '' : 's'})',
+                  primaryLabel:
+                      'Create PDF (${_images.length} image${_images.length == 1 ? '' : 's'})',
                   primaryIcon: Icons.picture_as_pdf_rounded,
                   enabled: !_processing,
                   isLoading: _processing,
@@ -183,10 +180,9 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
       children: [
         Text(
           'File Name',
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -246,18 +242,16 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
             const SizedBox(height: 12),
             Text(
               'No images selected',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.grey),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 4),
             Text(
               'Pick images from gallery or camera',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.grey.shade400),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade400),
             ),
           ],
         ),
@@ -270,10 +264,9 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
       children: [
         Text(
           '${_images.length} Image${_images.length == 1 ? '' : 's'}',
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const Spacer(),
         TextButton.icon(
@@ -299,10 +292,13 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
       itemCount: _images.length,
       itemBuilder: (context, index) {
         return _ImageGridItem(
-          path: _images[index],
-          pageNumber: index + 1,
-          onRemove: () => _removeImage(index),
-        ).animate().fadeIn(duration: 300.ms, delay: (index * 50).ms).scale(
+              path: _images[index],
+              pageNumber: index + 1,
+              onRemove: () => _removeImage(index),
+            )
+            .animate()
+            .fadeIn(duration: 300.ms, delay: (index * 50).ms)
+            .scale(
               begin: const Offset(0.85, 0.85),
               duration: 300.ms,
               delay: (index * 50).ms,
@@ -358,17 +354,15 @@ class _SourceButton extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     Text(
                       description,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Colors.grey),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                     ),
                   ],
                 ),
@@ -402,7 +396,7 @@ class _ImageGridItem extends StatelessWidget {
           child: Image.file(
             File(path),
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: Colors.grey.shade200,
               child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
             ),
@@ -415,7 +409,7 @@ class _ImageGridItem extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -441,7 +435,11 @@ class _ImageGridItem extends StatelessWidget {
                 color: Colors.red,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close_rounded, color: Colors.white, size: 14),
+              child: const Icon(
+                Icons.close_rounded,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
           ),
         ),

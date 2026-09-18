@@ -1,10 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -39,7 +37,7 @@ class _CompressPdfScreenState extends ConsumerState<CompressPdfScreen> {
   );
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -55,11 +53,12 @@ class _CompressPdfScreenState extends ConsumerState<CompressPdfScreen> {
 
   Future<void> _compress() async {
     if (_filePath == null) return;
-    final name =
-        ref.read(pdfServiceProvider).generateFileName('compressed');
+    final name = ref.read(pdfServiceProvider).generateFileName('compressed');
     setState(() => _isProcessing = true);
     try {
-      final result = await ref.read(pdfServiceProvider).compressPdf(
+      final result = await ref
+          .read(pdfServiceProvider)
+          .compressPdf(
             inputPath: _filePath!,
             outputName: name,
             quality: _quality,
@@ -69,8 +68,9 @@ class _CompressPdfScreenState extends ConsumerState<CompressPdfScreen> {
       }
       final outputPath = result.outputPath!;
 
-      final compressedSize =
-          File(outputPath).existsSync() ? File(outputPath).lengthSync() : 0;
+      final compressedSize = File(outputPath).existsSync()
+          ? File(outputPath).lengthSync()
+          : 0;
 
       final doc = DocumentModel(
         id: const Uuid().v4(),
@@ -173,10 +173,7 @@ class _CompressPdfScreenState extends ConsumerState<CompressPdfScreen> {
           ),
         ),
         if (_isProcessing)
-          ProcessingOverlay(
-            gradient: _gradient,
-            message: 'Compressing PDF…',
-          ),
+          ProcessingOverlay(gradient: _gradient, message: 'Compressing PDF…'),
       ],
     );
   }
@@ -208,15 +205,16 @@ class _CompressPdfScreenState extends ConsumerState<CompressPdfScreen> {
 
     return levels
         .map(
-          (l) => _LevelCard(
-            info: l,
-            isSelected: _level == l.index,
-            gradient: _gradient,
-            onTap: () => setState(() => _level = l.index),
-          )
-              .animate()
-              .fadeIn(duration: 300.ms, delay: (l.index * 60).ms)
-              .slideX(begin: 0.1, curve: Curves.easeOut),
+          (l) =>
+              _LevelCard(
+                    info: l,
+                    isSelected: _level == l.index,
+                    gradient: _gradient,
+                    onTap: () => setState(() => _level = l.index),
+                  )
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: (l.index * 60).ms)
+                  .slideX(begin: 0.1, curve: Curves.easeOut),
         )
         .toList();
   }
@@ -281,95 +279,113 @@ class _LevelCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: 200.ms,
-        curve: Curves.easeOut,
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFEA580C).withValues(alpha: isDark ? 0.2 : 0.1)
-              : AppTheme.cardColor(isDark),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFFEA580C)
-                : AppTheme.borderColor(isDark),
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: 200.ms,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: isSelected ? gradient : null,
-                color: isSelected ? null : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                info.icon,
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.white70 : AppTheme.textSecondary),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    info.label,
-                    style: TextStyle(
-                      color: isSelected
-                          ? const Color(0xFFEA580C)
-                          : AppTheme.textColor(isDark),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+      child:
+          AnimatedContainer(
+                duration: 200.ms,
+                curve: Curves.easeOut,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(
+                          0xFFEA580C,
+                        ).withValues(alpha: isDark ? 0.2 : 0.1)
+                      : AppTheme.cardColor(isDark),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFFEA580C)
+                        : AppTheme.borderColor(isDark),
+                    width: isSelected ? 1.5 : 1,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    info.description,
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                gradient: isSelected ? gradient : null,
-                color: isSelected ? null : Colors.white.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                info.badge,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (isSelected)
-              const Icon(Icons.check_circle_rounded,
-                  color: Color(0xFFEA580C), size: 20)
-            else
-              const SizedBox(width: 20),
-          ],
-        ),
-      )
-          .animate(target: isSelected ? 1 : 0)
-          .scale(begin: const Offset(1, 1), end: const Offset(1.01, 1.01)),
+                child: Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: 200.ms,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: isSelected ? gradient : null,
+                        color: isSelected
+                            ? null
+                            : (isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.05)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        info.icon,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark
+                                  ? Colors.white70
+                                  : AppTheme.textSecondary),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            info.label,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? const Color(0xFFEA580C)
+                                  : AppTheme.textColor(isDark),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            info.description,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: isSelected ? gradient : null,
+                        color: isSelected
+                            ? null
+                            : Colors.white.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        info.badge,
+                        style: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : AppTheme.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (isSelected)
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFFEA580C),
+                        size: 20,
+                      )
+                    else
+                      const SizedBox(width: 20),
+                  ],
+                ),
+              )
+              .animate(target: isSelected ? 1 : 0)
+              .scale(begin: const Offset(1, 1), end: const Offset(1.01, 1.01)),
     );
   }
 }
@@ -400,8 +416,7 @@ class _CompressionResultSheet extends StatelessWidget {
 
   double get _reduction {
     if (originalSize <= 0) return 0;
-    return ((originalSize - compressedSize) / originalSize * 100)
-        .clamp(0, 100);
+    return ((originalSize - compressedSize) / originalSize * 100).clamp(0, 100);
   }
 
   @override
@@ -423,7 +438,7 @@ class _CompressionResultSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: Theme.of(context).colorScheme.outlineVariant,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -431,19 +446,29 @@ class _CompressionResultSheet extends StatelessWidget {
           // Success icon
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(gradient: gradient, shape: BoxShape.circle),
-            child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
-          )
-              .animate()
-              .scale(begin: const Offset(0.5, 0.5), duration: 400.ms, curve: Curves.elasticOut),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
+          ).animate().scale(
+            begin: const Offset(0.5, 0.5),
+            duration: 400.ms,
+            curve: Curves.elasticOut,
+          ),
 
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Compression Complete!',
             style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold),
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -462,8 +487,11 @@ class _CompressionResultSheet extends StatelessWidget {
                   gradient: gradient,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_forward_rounded,
-                    color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               _StatCard(
@@ -477,21 +505,23 @@ class _CompressionResultSheet extends StatelessWidget {
 
           // Reduction badge
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '${_reduction.toStringAsFixed(1)}% reduced',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          )
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_reduction.toStringAsFixed(1)}% reduced',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
               .animate()
               .fadeIn(delay: 300.ms)
               .scale(begin: const Offset(0.8, 0.8)),
@@ -502,29 +532,40 @@ class _CompressionResultSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => Share.shareXFiles([XFile(document.filePath)],
-                  subject: document.name),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+              onPressed: () => SharePlus.instance.share(
+                ShareParams(
+                  files: [XFile(document.filePath)],
+                  subject: document.name,
                 ),
-              ).copyWith(
-                backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                elevation: WidgetStateProperty.all(0),
               ),
+              style:
+                  ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ).copyWith(
+                    backgroundColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    elevation: WidgetStateProperty.all(0),
+                  ),
               icon: const Icon(Icons.share_rounded),
-              label: const Text('Share Compressed PDF',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              label: const Text(
+                'Share Compressed PDF',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Done',
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text(
+              'Done',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
           ),
         ],
       ),
@@ -549,7 +590,9 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: gradient,
-          color: gradient == null ? Theme.of(context).colorScheme.surface : null,
+          color: gradient == null
+              ? Theme.of(context).colorScheme.surface
+              : null,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -566,8 +609,10 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: gradient != null
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),

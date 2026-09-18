@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -41,7 +40,7 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -90,8 +89,7 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
 
     if (ranges == null) {
       setState(() {
-        _rangeError =
-            'Invalid format. Use "1-3, 4-6, 7" (1-indexed pages).';
+        _rangeError = 'Invalid format. Use "1-3, 4-6, 7" (1-indexed pages).';
       });
       return;
     }
@@ -102,19 +100,24 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
     });
 
     try {
-      final results = await ref.read(pdfServiceProvider).splitPdf(
-            inputPath: _filePath!,
-            pageRanges: ranges,
-          );
+      final results = await ref
+          .read(pdfServiceProvider)
+          .splitPdf(inputPath: _filePath!, pageRanges: ranges);
 
       final docs = <DocumentModel>[];
+      final errors = <String>[];
       for (int i = 0; i < results.length; i++) {
         final res = results[i];
-        if (!res.isSuccess || res.outputPath == null) continue;
+        if (!res.isSuccess || res.outputPath == null) {
+          if (res.error != null) errors.add(res.error!);
+          continue;
+        }
         final path = res.outputPath!;
-        final rangeStr = ranges[i];
+        final rangeStr = i < ranges.length ? ranges[i] : '${i + 1}';
         final name = 'split_pages_$rangeStr';
-        final size = res.fileSizeBytes ?? (File(path).existsSync() ? File(path).lengthSync() : 0);
+        final size =
+            res.fileSizeBytes ??
+            (File(path).existsSync() ? File(path).lengthSync() : 0);
 
         final doc = DocumentModel(
           id: const Uuid().v4(),
@@ -136,11 +139,19 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
         _isProcessing = false;
         _results = docs;
       });
+      if (errors.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errors.join('\n')),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
 
       HapticFeedback.mediumImpact();
     } catch (e) {
-      setState(() => _isProcessing = false);
       if (!mounted) return;
+      setState(() => _isProcessing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Split failed: $e'),
@@ -202,17 +213,14 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
                         controller: _rangesCtrl,
                         errorText: _rangeError,
                         gradient: _gradient,
-                        onChanged: (_) =>
-                            setState(() => _rangeError = null),
+                        onChanged: (_) => setState(() => _rangeError = null),
                       ),
 
                       const SizedBox(height: 24),
 
                       // Results
                       if (_results.isNotEmpty) ...[
-                        _SectionLabel(
-                          '${_results.length} Files Created',
-                        ),
+                        _SectionLabel('${_results.length} Files Created'),
                         const SizedBox(height: 10),
                         ..._buildResultTiles(),
                       ],
@@ -234,30 +242,24 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
           ),
         ),
         if (_isProcessing)
-          ProcessingOverlay(
-            gradient: _gradient,
-            message: 'Splitting PDF…',
-          ),
+          ProcessingOverlay(gradient: _gradient, message: 'Splitting PDF…'),
       ],
     );
   }
 
   List<Widget> _buildResultTiles() {
-    return List.generate(
-      _results.length,
-      (index) {
-        final doc = _results[index];
-        return _ResultTile(
-          doc: doc,
-          index: index,
-          gradient: _gradient,
-          sizeLabel: _fmt(doc.fileSizeBytes),
-        )
-            .animate()
-            .fadeIn(duration: 300.ms, delay: (index * 60).ms)
-            .slideY(begin: 0.15, curve: Curves.easeOut);
-      },
-    );
+    return List.generate(_results.length, (index) {
+      final doc = _results[index];
+      return _ResultTile(
+            doc: doc,
+            index: index,
+            gradient: _gradient,
+            sizeLabel: _fmt(doc.fileSizeBytes),
+          )
+          .animate()
+          .fadeIn(duration: 300.ms, delay: (index * 60).ms)
+          .slideY(begin: 0.15, curve: Curves.easeOut);
+    });
   }
 }
 
@@ -271,23 +273,26 @@ class _InfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFB91C1C).withOpacity(0.12),
+        color: const Color(0xFFB91C1C).withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFB91C1C).withOpacity(0.3),
+          color: const Color(0xFFB91C1C).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded,
-              color: Color(0xFFB91C1C), size: 18),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Color(0xFFB91C1C),
+            size: 18,
+          ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'Enter page ranges separated by commas. '
               'Example: 1-3, 4-6, 7 creates 3 separate files.',
               style: TextStyle(
-                color: Colors.white70,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 13,
                 height: 1.4,
               ),
@@ -307,8 +312,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
@@ -340,37 +345,42 @@ class _RangeField extends StatelessWidget {
         hintText: '1-3, 4-6, 7',
         hintStyle: TextStyle(color: AppTheme.textSecondaryColor(isDark)),
         helperText: 'Use commas to separate ranges (e.g. 1-3, 4-6, 7)',
-        helperStyle: TextStyle(color: AppTheme.textSecondaryColor(isDark), fontSize: 12),
+        helperStyle: TextStyle(
+          color: AppTheme.textSecondaryColor(isDark),
+          fontSize: 12,
+        ),
         errorText: errorText,
         errorStyle: const TextStyle(color: Color(0xFFDB2777)),
-        prefixIcon: Icon(Icons.numbers_rounded,
-            color: AppTheme.textSecondaryColor(isDark), size: 20),
+        prefixIcon: Icon(
+          Icons.numbers_rounded,
+          color: AppTheme.textSecondaryColor(isDark),
+          size: 20,
+        ),
         filled: true,
         fillColor: AppTheme.cardColor(isDark),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Color(0xFFB91C1C), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFFB91C1C), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Color(0xFFDB2777), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFFDB2777), width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Color(0xFFDB2777), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFFDB2777), width: 1.5),
         ),
       ),
     );
@@ -451,14 +461,15 @@ class _ResultTile extends StatelessWidget {
           const SizedBox(width: 8),
           // Share button
           GestureDetector(
-            onTap: () => Share.shareXFiles(
-              [XFile(doc.filePath)],
-              subject: doc.name,
+            onTap: () => SharePlus.instance.share(
+              ShareParams(files: [XFile(doc.filePath)], subject: doc.name),
             ),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(

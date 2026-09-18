@@ -1,7 +1,7 @@
 // GENERATED CODE - Manually created Hive adapter
 // Equivalent to what build_runner would generate
 
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'document_model.dart';
 
 class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
@@ -104,6 +104,10 @@ class DocumentTypeAdapter extends TypeAdapter<DocumentType> {
         return DocumentType.encryptedPdf;
       case 12:
         return DocumentType.textPdf;
+      case 13:
+        return DocumentType.organizedPdf;
+      case 14:
+        return DocumentType.unlockedPdf;
       default:
         return DocumentType.other;
     }
@@ -150,6 +154,12 @@ class DocumentTypeAdapter extends TypeAdapter<DocumentType> {
         break;
       case DocumentType.textPdf:
         writer.writeByte(12);
+        break;
+      case DocumentType.organizedPdf:
+        writer.writeByte(13);
+        break;
+      case DocumentType.unlockedPdf:
+        writer.writeByte(14);
         break;
     }
   }

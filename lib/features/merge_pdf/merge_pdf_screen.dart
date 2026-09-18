@@ -1,12 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
@@ -47,7 +45,7 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
   }
 
   Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -96,10 +94,9 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
 
     setState(() => _isProcessing = true);
     try {
-      final result = await ref.read(pdfServiceProvider).mergePdfs(
-            pdfPaths: _files,
-            outputName: outputName,
-          );
+      final result = await ref
+          .read(pdfServiceProvider)
+          .mergePdfs(pdfPaths: _files, outputName: outputName);
       if (!result.isSuccess || result.outputPath == null) {
         throw Exception(result.error ?? 'Operation failed');
       }
@@ -129,7 +126,8 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
         backgroundColor: Colors.transparent,
         builder: (_) => SuccessSheet(
           title: 'Merge Complete!',
-          subtitle: 'Your ${_files.length} PDFs have been merged into one file.',
+          subtitle:
+              'Your ${_files.length} PDFs have been merged into one file.',
           path: doc.filePath,
           gradient: _gradient,
           onDone: () {
@@ -163,7 +161,8 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
                 gradient: _gradient,
                 icon: Icons.merge_rounded,
                 title: 'Merge PDFs',
-                subtitle: '${_files.length} file${_files.length == 1 ? '' : 's'} selected',
+                subtitle:
+                    '${_files.length} file${_files.length == 1 ? '' : 's'} selected',
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -212,9 +211,7 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
           ),
         ),
         if (_isProcessing)
-          ProcessingOverlay(
-            message: 'Merging ${_files.length} PDFs…',
-          ),
+          ProcessingOverlay(message: 'Merging ${_files.length} PDFs…'),
       ],
     );
   }
@@ -238,13 +235,13 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
           final name = _fileName(path);
           final size = _fileSizeBadge(path);
           return _FileTile(
-            key: ValueKey(path),
-            index: index,
-            name: name,
-            sizeBadge: size,
-            gradient: _gradient,
-            onDelete: () => _removeFile(index),
-          )
+                key: ValueKey(path),
+                index: index,
+                name: name,
+                sizeBadge: size,
+                gradient: _gradient,
+                onDelete: () => _removeFile(index),
+              )
               .animate()
               .fadeIn(duration: 250.ms, delay: (index * 40).ms)
               .slideX(begin: 0.15, curve: Curves.easeOut);
@@ -288,7 +285,11 @@ class _PickerZone extends StatelessWidget {
                 gradient: gradient,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -349,8 +350,11 @@ class _FileTile extends StatelessWidget {
             gradient: gradient,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.picture_as_pdf_rounded,
-              color: Colors.white, size: 20),
+          child: const Icon(
+            Icons.picture_as_pdf_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
         title: Text(
           name,
@@ -365,18 +369,14 @@ class _FileTile extends StatelessWidget {
         subtitle: sizeBadge.isNotEmpty
             ? Container(
                 margin: const EdgeInsets.only(top: 4),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   sizeBadge,
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
                 ),
               )
             : null,
@@ -384,15 +384,21 @@ class _FileTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(Icons.close_rounded,
-                  color: AppTheme.textSecondary, size: 20),
+              icon: Icon(
+                Icons.close_rounded,
+                color: AppTheme.textSecondary,
+                size: 20,
+              ),
               onPressed: onDelete,
               splashRadius: 20,
             ),
             ReorderableDragStartListener(
               index: index,
-              child: Icon(Icons.drag_handle_rounded,
-                  color: AppTheme.textSecondary, size: 22),
+              child: Icon(
+                Icons.drag_handle_rounded,
+                color: AppTheme.textSecondary,
+                size: 22,
+              ),
             ),
           ],
         ),
@@ -418,10 +424,7 @@ class _SectionLabel extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        if (trailing != null) ...[
-          const Spacer(),
-          trailing!,
-        ],
+        if (trailing != null) ...[const Spacer(), trailing!],
       ],
     );
   }
@@ -441,12 +444,16 @@ class _OutputNameField extends StatelessWidget {
         hintText: 'merged_document',
         hintStyle: TextStyle(color: AppTheme.textSecondaryColor(isDark)),
         suffixText: '.pdf',
-        suffixStyle:
-            TextStyle(color: AppTheme.textSecondaryColor(isDark), fontSize: 14),
+        suffixStyle: TextStyle(
+          color: AppTheme.textSecondaryColor(isDark),
+          fontSize: 14,
+        ),
         filled: true,
         fillColor: AppTheme.cardColor(isDark),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
@@ -457,8 +464,7 @@ class _OutputNameField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF7C3AED), width: 1.5),
         ),
       ),
     );

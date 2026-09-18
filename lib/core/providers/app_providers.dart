@@ -38,7 +38,8 @@ final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
 
 final documentsProvider =
     NotifierProvider<DocumentsNotifier, List<DocumentModel>>(
-        DocumentsNotifier.new);
+      DocumentsNotifier.new,
+    );
 
 class DocumentsNotifier extends Notifier<List<DocumentModel>> {
   @override
@@ -64,6 +65,12 @@ class DocumentsNotifier extends Notifier<List<DocumentModel>> {
     loadDocuments();
   }
 
+  Future<void> renameDocument(String id, String newName) async {
+    final storage = ref.read(storageServiceProvider);
+    await storage.renameDocument(id, newName);
+    loadDocuments();
+  }
+
   Future<void> toggleFavorite(String id) async {
     final storage = ref.read(storageServiceProvider);
     await storage.toggleFavorite(id);
@@ -78,8 +85,9 @@ class DocumentsNotifier extends Notifier<List<DocumentModel>> {
 
 // ---- Theme Provider ----
 
-final themeModeProvider =
-    NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
+);
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -114,8 +122,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
 // ---- Premium Provider ----
 
-final isPremiumProvider =
-    NotifierProvider<PremiumNotifier, bool>(PremiumNotifier.new);
+final isPremiumProvider = NotifierProvider<PremiumNotifier, bool>(
+  PremiumNotifier.new,
+);
 
 class PremiumNotifier extends Notifier<bool> {
   @override
@@ -139,17 +148,20 @@ class SearchQueryNotifier extends Notifier<String> {
   void set(String value) => state = value;
 }
 
-final searchQueryProvider =
-    NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
+final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
+  SearchQueryNotifier.new,
+);
 
 final filteredDocumentsProvider = Provider<List<DocumentModel>>((ref) {
   final query = ref.watch(searchQueryProvider);
   final docs = ref.watch(documentsProvider);
   if (query.isEmpty) return docs;
   return docs
-      .where((d) =>
-          d.name.toLowerCase().contains(query.toLowerCase()) ||
-          d.tags.any((t) => t.toLowerCase().contains(query.toLowerCase())))
+      .where(
+        (d) =>
+            d.name.toLowerCase().contains(query.toLowerCase()) ||
+            d.tags.any((t) => t.toLowerCase().contains(query.toLowerCase())),
+      )
       .toList();
 });
 
@@ -161,14 +173,15 @@ class SelectedTabNotifier extends Notifier<int> {
   void set(int value) => state = value;
 }
 
-final selectedTabProvider =
-    NotifierProvider<SelectedTabNotifier, int>(SelectedTabNotifier.new);
+final selectedTabProvider = NotifierProvider<SelectedTabNotifier, int>(
+  SelectedTabNotifier.new,
+);
 
 // ---- Processing State ----
 
-final processingProvider =
-    NotifierProvider<ProcessingNotifier, ProcessingInfo>(
-        ProcessingNotifier.new);
+final processingProvider = NotifierProvider<ProcessingNotifier, ProcessingInfo>(
+  ProcessingNotifier.new,
+);
 
 class ProcessingInfo {
   final bool isProcessing;

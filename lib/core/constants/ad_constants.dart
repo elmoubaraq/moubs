@@ -16,14 +16,12 @@ class AdConstants {
       'ca-app-pub-1534677402087236/6006522250'; // Use native as banner fallback
 
   // Test IDs for development
-  static const String testBannerId =
-      'ca-app-pub-3940256099942544/6300978111';
+  static const String testBannerId = 'ca-app-pub-3940256099942544/6300978111';
   static const String testInterstitialId =
       'ca-app-pub-3940256099942544/1033173712';
   static const String testRewardedInterstitialId =
       'ca-app-pub-3940256099942544/5354046379';
-  static const String testNativeId =
-      'ca-app-pub-3940256099942544/2247696110';
+  static const String testNativeId = 'ca-app-pub-3940256099942544/2247696110';
 
   // Use test ads in debug mode
   static bool get useTestAds {
@@ -39,8 +37,7 @@ class AdConstants {
     return isDebug;
   }
 
-  static String get activeBannerId =>
-      useTestAds ? testBannerId : bannerId;
+  static String get activeBannerId => useTestAds ? testBannerId : bannerId;
   static String get activeInterstitialId =>
       useTestAds ? testInterstitialId : rewardedInterstitialId;
   static String get activeRewardedInterstitialId =>

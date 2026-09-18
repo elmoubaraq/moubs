@@ -21,9 +21,12 @@ class AppShell extends StatelessWidget {
   void _onTap(BuildContext context, int index) {
     HapticFeedback.lightImpact();
     switch (index) {
-      case 0: context.go('/');
-      case 1: context.go('/files');
-      case 2: context.go('/settings');
+      case 0:
+        context.go('/');
+      case 1:
+        context.go('/files');
+      case 2:
+        context.go('/settings');
     }
   }
 
@@ -122,19 +125,17 @@ class _NavButton extends StatefulWidget {
   State<_NavButton> createState() => _NavButtonState();
 }
 
-class _NavButtonState extends State<_NavButton> with SingleTickerProviderStateMixin {
+class _NavButtonState extends State<_NavButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _scaleAnim;
-  late Animation<double> _pillAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _scaleAnim = Tween<double>(begin: 1, end: 0.85).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
     );
-    _pillAnim = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
     if (widget.selected) _controller.forward();
   }
 
@@ -156,8 +157,12 @@ class _NavButtonState extends State<_NavButton> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = widget.isDark ? AppTheme.primaryLight : AppTheme.primary;
-    final inactiveColor = widget.isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
+    final activeColor = widget.isDark
+        ? AppTheme.primaryLight
+        : AppTheme.primary;
+    final inactiveColor = widget.isDark
+        ? const Color(0xFF6B7280)
+        : const Color(0xFF9CA3AF);
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -196,7 +201,9 @@ class _NavButtonState extends State<_NavButton> with SingleTickerProviderStateMi
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        widget.selected ? widget.item.activeIcon : widget.item.icon,
+                        widget.selected
+                            ? widget.item.activeIcon
+                            : widget.item.icon,
                         size: 22,
                         color: widget.selected ? activeColor : inactiveColor,
                       ),
@@ -207,7 +214,9 @@ class _NavButtonState extends State<_NavButton> with SingleTickerProviderStateMi
                       duration: const Duration(milliseconds: 200),
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: widget.selected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: widget.selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: widget.selected ? activeColor : inactiveColor,
                         fontFamily: 'PlusJakartaSans',
                       ),

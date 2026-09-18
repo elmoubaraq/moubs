@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
@@ -39,8 +37,8 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
     super.dispose();
   }
 
-    Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+  Future<void> _pickFile() async {
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -50,7 +48,7 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
     });
   }
 
-Future<void> _addWatermark() async {
+  Future<void> _addWatermark() async {
     if (_filePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a PDF file first')),
@@ -67,7 +65,9 @@ Future<void> _addWatermark() async {
     setState(() => _isProcessing = true);
     try {
       final name = 'watermarked_${const Uuid().v4()}.pdf';
-      final result = await ref.read(pdfServiceProvider).watermarkPdf(
+      final result = await ref
+          .read(pdfServiceProvider)
+          .watermarkPdf(
             inputPath: _filePath!,
             watermarkText: _textCtrl.text,
             outputName: name,
@@ -86,7 +86,9 @@ Future<void> _addWatermark() async {
         type: DocumentType.watermarkedPdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(outputPath).existsSync() ? File(outputPath).lengthSync() : 0,
+        fileSizeBytes: File(outputPath).existsSync()
+            ? File(outputPath).lengthSync()
+            : 0,
       );
 
       await ref.read(documentsProvider.notifier).addDocument(doc);
@@ -111,9 +113,9 @@ Future<void> _addWatermark() async {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -123,143 +125,164 @@ Future<void> _addWatermark() async {
     return Stack(
       children: [
         Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: CustomScrollView(
-          slivers: [
-            ToolSliverHeader(
-              title: 'Watermark PDF',
-              subtitle: 'Add a text watermark overlay to your PDF',
-              icon: Icons.water_drop_rounded,
-              gradient: _gradient,
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  FilePickerZone(
-                    selectedPath: _filePath,
-                    hint: 'Select PDF File',
-                    accept: 'PDF files only',
-                    gradient: _gradient,
-                    onTap: _pickFile,
-                  ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-
-                  const SizedBox(height: 20),
-
-                  _SectionCard(
-                    title: 'Watermark Text',
-                    child: TextFormField(
-                      controller: _textCtrl,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'e.g. CONFIDENTIAL',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                        prefixIcon: const Icon(Icons.text_fields_rounded, color: Color(0xFF0EA5E9)),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.07),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF0EA5E9), width: 1.5),
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1),
-
-                  const SizedBox(height: 16),
-
-                  // Live Preview Card
-                  _WatermarkPreviewCard(
-                    text: _textCtrl.text,
-                    fontSize: _fontSize,
-                    opacity: _opacity,
-                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-
-                  const SizedBox(height: 16),
-
-                  _SectionCard(
-                    title: 'Font Size',
-                    trailing: Text(
-                      '${_fontSize.toStringAsFixed(0)}pt',
-                      style: const TextStyle(
-                        color: Color(0xFF0EA5E9),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        activeTrackColor: const Color(0xFF0EA5E9),
-                        inactiveTrackColor: Colors.white.withOpacity(0.1),
-                        thumbColor: const Color(0xFF0EA5E9),
-                        overlayColor: const Color(0xFF0EA5E9).withOpacity(0.2),
-                        trackHeight: 4,
-                      ),
-                      child: Slider(
-                        value: _fontSize,
-                        min: 20,
-                        max: 100,
-                        divisions: 16,
-                        onChanged: (v) => setState(() => _fontSize = v),
-                      ),
-                    ),
-                  ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
-
-                  const SizedBox(height: 16),
-
-                  _SectionCard(
-                    title: 'Opacity',
-                    trailing: Text(
-                      '${(_opacity * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        color: Color(0xFF0EA5E9),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        activeTrackColor: const Color(0xFF0EA5E9),
-                        inactiveTrackColor: Colors.white.withOpacity(0.1),
-                        thumbColor: const Color(0xFF0EA5E9),
-                        overlayColor: const Color(0xFF0EA5E9).withOpacity(0.2),
-                        trackHeight: 4,
-                      ),
-                      child: Slider(
-                        value: _opacity,
-                        min: 0.1,
-                        max: 0.9,
-                        divisions: 8,
-                        onChanged: (v) => setState(() => _opacity = v),
-                      ),
-                    ),
-                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                ]),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: CustomScrollView(
+            slivers: [
+              ToolSliverHeader(
+                title: 'Watermark PDF',
+                subtitle: 'Add a text watermark overlay to your PDF',
+                icon: Icons.water_drop_rounded,
+                gradient: _gradient,
               ),
-            ),
-          ],
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    FilePickerZone(
+                      selectedPath: _filePath,
+                      hint: 'Select PDF File',
+                      accept: 'PDF files only',
+                      gradient: _gradient,
+                      onTap: _pickFile,
+                    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+
+                    const SizedBox(height: 20),
+
+                    _SectionCard(
+                      title: 'Watermark Text',
+                      child: TextFormField(
+                        controller: _textCtrl,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. CONFIDENTIAL',
+                          hintStyle: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.text_fields_rounded,
+                            color: Color(0xFF0EA5E9),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.05),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0EA5E9),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1),
+
+                    const SizedBox(height: 16),
+
+                    // Live Preview Card
+                    _WatermarkPreviewCard(
+                      text: _textCtrl.text,
+                      fontSize: _fontSize,
+                      opacity: _opacity,
+                    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+
+                    const SizedBox(height: 16),
+
+                    _SectionCard(
+                      title: 'Font Size',
+                      trailing: Text(
+                        '${_fontSize.toStringAsFixed(0)}pt',
+                        style: const TextStyle(
+                          color: Color(0xFF0EA5E9),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      child: SliderTheme(
+                        data: SliderThemeData(
+                          activeTrackColor: const Color(0xFF0EA5E9),
+                          inactiveTrackColor: Theme.of(
+                            context,
+                          ).colorScheme.outlineVariant,
+                          thumbColor: const Color(0xFF0EA5E9),
+                          overlayColor: const Color(
+                            0xFF0EA5E9,
+                          ).withValues(alpha: 0.2),
+                          trackHeight: 4,
+                        ),
+                        child: Slider(
+                          value: _fontSize,
+                          min: 20,
+                          max: 100,
+                          divisions: 16,
+                          onChanged: (v) => setState(() => _fontSize = v),
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
+
+                    const SizedBox(height: 16),
+
+                    _SectionCard(
+                      title: 'Opacity',
+                      trailing: Text(
+                        '${(_opacity * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          color: Color(0xFF0EA5E9),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      child: SliderTheme(
+                        data: SliderThemeData(
+                          activeTrackColor: const Color(0xFF0EA5E9),
+                          inactiveTrackColor: Theme.of(
+                            context,
+                          ).colorScheme.outlineVariant,
+                          thumbColor: const Color(0xFF0EA5E9),
+                          overlayColor: const Color(
+                            0xFF0EA5E9,
+                          ).withValues(alpha: 0.2),
+                          trackHeight: 4,
+                        ),
+                        child: Slider(
+                          value: _opacity,
+                          min: 0.1,
+                          max: 0.9,
+                          divisions: 8,
+                          onChanged: (v) => setState(() => _opacity = v),
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+                  ]),
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: BottomActionBar(
+            gradient: _gradient,
+            primaryLabel: 'Add Watermark',
+            primaryIcon: Icons.water_drop_rounded,
+            enabled: _filePath != null && !_isProcessing,
+            isLoading: _isProcessing,
+            onPrimary: _addWatermark,
+          ),
         ),
-        bottomNavigationBar: BottomActionBar(
-          gradient: _gradient,
-          primaryLabel: 'Add Watermark',
-          primaryIcon: Icons.water_drop_rounded,
-          enabled: _filePath != null && !_isProcessing,
-          isLoading: _isProcessing,
-          onPrimary: _addWatermark,
-        ),
-      ),
-      if (_isProcessing) const ProcessingOverlay(message: 'Adding Watermark...'),
-    ],
-  );
-}
+        if (_isProcessing)
+          const ProcessingOverlay(message: 'Adding Watermark...'),
+      ],
+    );
+  }
 }
 
 // ─── Live Preview Card ─────────────────────────────────────────────────────
@@ -282,7 +305,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A2332),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       clipBehavior: Clip.hardEdge,
       child: Stack(
@@ -297,7 +320,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
               (i) => Container(
                 height: 1,
                 margin: const EdgeInsets.symmetric(horizontal: 24),
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -311,7 +334,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.7),
+                    color: Colors.red.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -320,7 +343,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.7),
+                    color: Colors.orange.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -329,7 +352,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.7),
+                    color: Colors.green.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -361,7 +384,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
               'Preview',
               style: TextStyle(
                 fontSize: 10,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -375,11 +398,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
 // ─── Reusable Section Card ─────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.child,
-    this.trailing,
-  });
+  const _SectionCard({required this.title, required this.child, this.trailing});
 
   final String title;
   final Widget child;
@@ -409,7 +428,7 @@ class _SectionCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (trailing != null) trailing!,
+              ?trailing,
             ],
           ),
           const SizedBox(height: 12),

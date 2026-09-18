@@ -7,10 +7,7 @@ import '../providers/app_providers.dart';
 class BannerAdWidget extends ConsumerStatefulWidget {
   final AdSize adSize;
 
-  const BannerAdWidget({
-    super.key,
-    this.adSize = AdSize.banner,
-  });
+  const BannerAdWidget({super.key, this.adSize = AdSize.banner});
 
   @override
   ConsumerState<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -109,9 +106,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
         minHeight: 90,
         maxHeight: 120,
       ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       child: AdWidget(ad: _nativeAd!),
     );

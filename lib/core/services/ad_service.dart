@@ -111,7 +111,9 @@ class AdService {
         onAdFailedToLoad: (error) {
           debugPrint('Rewarded interstitial failed: ${error.message}');
           Future.delayed(
-              const Duration(seconds: 30), _preloadRewardedInterstitial);
+            const Duration(seconds: 30),
+            _preloadRewardedInterstitial,
+          );
         },
       ),
     );

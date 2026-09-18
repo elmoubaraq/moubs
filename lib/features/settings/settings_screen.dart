@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ad_widgets.dart';
-import '../../core/services/storage_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -20,9 +19,7 @@ class SettingsScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           // ── Large App Bar ────────────────────────────────────────────────
-          SliverAppBar.large(
-            title: const Text('Settings'),
-          ),
+          SliverAppBar.large(title: const Text('Settings')),
 
           SliverToBoxAdapter(
             child: Column(
@@ -68,17 +65,25 @@ class SettingsScreen extends ConsumerWidget {
                           gradient: AppTheme.primaryGradient,
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(Icons.eco_rounded, color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.eco_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         'Evergreen v2.0.0',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Made with 🌿 by MoubsCorps',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textTertiary),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textTertiary,
+                        ),
                       ),
                     ],
                   ),
@@ -96,71 +101,102 @@ class SettingsScreen extends ConsumerWidget {
   // ── Profile Card ──────────────────────────────────────────────────────────
   Widget _buildProfileCard(BuildContext context, bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppTheme.heroGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppTheme.cardShadow(AppTheme.primary),
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-            ),
-            child: const Icon(Icons.person_rounded, color: Colors.white, size: 30),
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: AppTheme.heroGradient,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppTheme.cardShadow(AppTheme.primary),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Evergreen User',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
+          child: Row(
+            children: [
+              // Avatar
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    width: 2,
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.star_rounded, color: Colors.white, size: 12),
-                      SizedBox(width: 4),
-                      Text(
-                        'Free Plan',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Evergreen User',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.star_rounded,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Free Plan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0, duration: 400.ms);
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.1, end: 0, duration: 400.ms);
   }
 
   // ── Theme Picker ──────────────────────────────────────────────────────────
   Widget _buildThemePicker(
-      BuildContext context, WidgetRef ref, ThemeMode themeMode, bool isDark) {
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode themeMode,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+        border: Border.all(
+          color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+        ),
       ),
       child: Column(
         children: [
@@ -171,12 +207,18 @@ class SettingsScreen extends ConsumerWidget {
             selected: themeMode == ThemeMode.light,
             onTap: () {
               HapticFeedback.selectionClick();
-              ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.light);
+              ref
+                  .read(themeModeProvider.notifier)
+                  .setThemeMode(ThemeMode.light);
             },
             color: AppTheme.warning,
           ),
-          Divider(height: 1, indent: 16, endIndent: 16,
-              color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
           _ThemeModeItem(
             icon: Icons.dark_mode_rounded,
             label: 'Dark',
@@ -188,8 +230,12 @@ class SettingsScreen extends ConsumerWidget {
             },
             color: AppTheme.secondary,
           ),
-          Divider(height: 1, indent: 16, endIndent: 16,
-              color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
           _ThemeModeItem(
             icon: Icons.brightness_auto_rounded,
             label: 'System',
@@ -197,7 +243,9 @@ class SettingsScreen extends ConsumerWidget {
             selected: themeMode == ThemeMode.system,
             onTap: () {
               HapticFeedback.selectionClick();
-              ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.system);
+              ref
+                  .read(themeModeProvider.notifier)
+                  .setThemeMode(ThemeMode.system);
             },
             color: AppTheme.primary,
           ),
@@ -223,7 +271,9 @@ class SettingsScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+        border: Border.all(
+          color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+        ),
       ),
       child: Column(
         children: [
@@ -241,14 +291,21 @@ class SettingsScreen extends ConsumerWidget {
                         color: AppTheme.info.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.storage_rounded, color: AppTheme.info, size: 18),
+                      child: const Icon(
+                        Icons.storage_rounded,
+                        color: AppTheme.info,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Storage Used', style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            'Storage Used',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                           Text(
                             '${fmt(totalBytes)} • ${docs.length} documents',
                             style: Theme.of(context).textTheme.bodySmall,
@@ -264,7 +321,9 @@ class SettingsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: ratio,
-                    backgroundColor: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                    backgroundColor: isDark
+                        ? AppTheme.borderDark
+                        : AppTheme.borderLight,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       ratio > 0.8 ? AppTheme.warning : AppTheme.primary,
                     ),
@@ -275,15 +334,21 @@ class SettingsScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${(ratio * 100).toInt()}% of 500 MB used',
-                        style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      '${(ratio * 100).toInt()}% of 500 MB used',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          Divider(height: 1, indent: 16, endIndent: 16,
-              color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
           _SettingsTile(
             icon: Icons.cleaning_services_rounded,
             label: 'Clear All Documents',
@@ -303,7 +368,9 @@ class SettingsScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+        border: Border.all(
+          color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+        ),
       ),
       child: Column(
         children: [
@@ -312,7 +379,9 @@ class SettingsScreen extends ConsumerWidget {
             label: 'Rate Evergreen',
             subtitle: 'Leave a review on Google Play',
             color: AppTheme.warning,
-            onTap: () => _launchUrl('https://play.google.com/store/apps/details?id=com.moubscorps.evergreen'),
+            onTap: () => _launchUrl(
+              'https://play.google.com/store/apps/details?id=com.moubscorps.evergreen',
+            ),
           ),
           _divider(isDark),
           _SettingsTile(
@@ -320,7 +389,9 @@ class SettingsScreen extends ConsumerWidget {
             label: 'Send Feedback',
             subtitle: 'support@moubscorps.com',
             color: AppTheme.primary,
-            onTap: () => _launchUrl('mailto:support@moubscorps.com?subject=Evergreen%20Feedback'),
+            onTap: () => _launchUrl(
+              'mailto:support@moubscorps.com?subject=Evergreen%20Feedback',
+            ),
           ),
           _divider(isDark),
           _SettingsTile(
@@ -355,7 +426,11 @@ class SettingsScreen extends ConsumerWidget {
                   gradient: AppTheme.heroGradient,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.eco_rounded, color: Colors.white, size: 28),
+                child: const Icon(
+                  Icons.eco_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
               applicationLegalese: '© 2024 MoubsCorps. All rights reserved.',
             ),
@@ -366,12 +441,17 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _divider(bool isDark) => Divider(
-      height: 1, indent: 16, endIndent: 16,
-      color: isDark ? AppTheme.borderDark : AppTheme.borderLight);
+    height: 1,
+    indent: 16,
+    endIndent: 16,
+    color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+  );
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
@@ -379,12 +459,20 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Clear All Documents?'),
-        content: const Text('This will permanently delete all your documents from the app. This cannot be undone.'),
+        content: const Text(
+          'This will permanently delete all your documents from the app. This cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear All', style: TextStyle(color: AppTheme.error)),
+            child: const Text(
+              'Clear All',
+              style: TextStyle(color: AppTheme.error),
+            ),
           ),
         ],
       ),
@@ -394,9 +482,9 @@ class SettingsScreen extends ConsumerWidget {
       for (final doc in docs) {
         ref.read(documentsProvider.notifier).deleteDocument(doc.id);
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All documents cleared')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('All documents cleared')));
     }
   }
 }
@@ -451,8 +539,14 @@ class _SettingsTile extends StatelessWidget {
         ),
         child: Icon(icon, color: color, size: 18),
       ),
-      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: AppTheme.textTertiary)),
+      title: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: AppTheme.textTertiary),
+      ),
       trailing: const Icon(Icons.chevron_right_rounded, size: 18),
       onTap: () {
         HapticFeedback.lightImpact();
@@ -494,19 +588,35 @@ class _ThemeModeItem extends StatelessWidget {
             color: selected ? color.withValues(alpha: 0.3) : Colors.transparent,
           ),
         ),
-        child: Icon(icon, color: selected ? color : AppTheme.textTertiary, size: 18),
+        child: Icon(
+          icon,
+          color: selected ? color : AppTheme.textTertiary,
+          size: 18,
+        ),
       ),
-      title: Text(label,
-          style: TextStyle(
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? color : null,
-              fontSize: 14)),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: selected ? color : null,
+          fontSize: 14,
+        ),
+      ),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
       trailing: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         child: selected
-            ? Icon(Icons.check_circle_rounded, color: color, size: 20, key: const ValueKey('selected'))
-            : const Icon(Icons.circle_outlined, size: 20, key: ValueKey('unselected')),
+            ? Icon(
+                Icons.check_circle_rounded,
+                color: color,
+                size: 20,
+                key: const ValueKey('selected'),
+              )
+            : const Icon(
+                Icons.circle_outlined,
+                size: 20,
+                key: ValueKey('unselected'),
+              ),
       ),
       onTap: onTap,
     );

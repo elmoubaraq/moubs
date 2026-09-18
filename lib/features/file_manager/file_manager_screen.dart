@@ -7,6 +7,7 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/services/print_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
@@ -57,11 +58,26 @@ class FileManagerSearchNotifier extends Notifier<String> {
   void set(String value) => super.state = value;
 }
 
-final fileManagerSortProvider = NotifierProvider<FileManagerSortNotifier, SortBy>(FileManagerSortNotifier.new);
-final fileManagerFilterProvider = NotifierProvider<FileManagerFilterNotifier, String?>(FileManagerFilterNotifier.new);
-final fileManagerViewProvider = NotifierProvider<FileManagerViewNotifier, ViewMode>(FileManagerViewNotifier.new);
-final fileManagerSelectionProvider = NotifierProvider<FileManagerSelectionNotifier, Set<String>>(FileManagerSelectionNotifier.new);
-final fileManagerSearchProvider = NotifierProvider<FileManagerSearchNotifier, String>(FileManagerSearchNotifier.new);
+final fileManagerSortProvider =
+    NotifierProvider<FileManagerSortNotifier, SortBy>(
+      FileManagerSortNotifier.new,
+    );
+final fileManagerFilterProvider =
+    NotifierProvider<FileManagerFilterNotifier, String?>(
+      FileManagerFilterNotifier.new,
+    );
+final fileManagerViewProvider =
+    NotifierProvider<FileManagerViewNotifier, ViewMode>(
+      FileManagerViewNotifier.new,
+    );
+final fileManagerSelectionProvider =
+    NotifierProvider<FileManagerSelectionNotifier, Set<String>>(
+      FileManagerSelectionNotifier.new,
+    );
+final fileManagerSearchProvider =
+    NotifierProvider<FileManagerSearchNotifier, String>(
+      FileManagerSearchNotifier.new,
+    );
 
 final sortedFilteredDocsProvider = Provider<List<DocumentModel>>((ref) {
   final docs = ref.watch(documentsProvider);
@@ -73,7 +89,9 @@ final sortedFilteredDocsProvider = Provider<List<DocumentModel>>((ref) {
 
   // Apply query
   if (query.isNotEmpty) {
-    list = list.where((d) => d.name.toLowerCase().contains(query.toLowerCase())).toList();
+    list = list
+        .where((d) => d.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
   }
 
   // Apply filter
@@ -153,12 +171,16 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  onPressed: () => ref.read(fileManagerSelectionProvider.notifier).state = {},
+                  onPressed: () =>
+                      ref.read(fileManagerSelectionProvider.notifier).state =
+                          {},
                 ),
               ] else ...[
                 // Search toggle
                 IconButton(
-                  icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
+                  icon: Icon(
+                    _isSearching ? Icons.close_rounded : Icons.search_rounded,
+                  ),
                   onPressed: () {
                     HapticFeedback.lightImpact();
                     setState(() {
@@ -175,15 +197,22 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
                   icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
                     child: Icon(
-                      viewMode == ViewMode.list ? Icons.grid_view_rounded : Icons.view_list_rounded,
+                      viewMode == ViewMode.list
+                          ? Icons.grid_view_rounded
+                          : Icons.view_list_rounded,
                       key: ValueKey(viewMode),
                     ),
                   ),
                   onPressed: () {
                     HapticFeedback.selectionClick();
-                    ref.read(fileManagerViewProvider.notifier).state =
-                        viewMode == ViewMode.list ? ViewMode.grid : ViewMode.list;
-                    viewMode == ViewMode.list ? _viewToggleAnim.forward() : _viewToggleAnim.reverse();
+                    ref
+                        .read(fileManagerViewProvider.notifier)
+                        .state = viewMode == ViewMode.list
+                        ? ViewMode.grid
+                        : ViewMode.list;
+                    viewMode == ViewMode.list
+                        ? _viewToggleAnim.forward()
+                        : _viewToggleAnim.reverse();
                   },
                 ),
                 // Sort
@@ -209,12 +238,16 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
                             icon: const Icon(Icons.clear_rounded, size: 18),
                             onPressed: () {
                               _searchController.clear();
-                              ref.read(fileManagerSearchProvider.notifier).state = '';
+                              ref
+                                      .read(fileManagerSearchProvider.notifier)
+                                      .state =
+                                  '';
                             },
                           )
                         : null,
                   ),
-                  onChanged: (v) => ref.read(fileManagerSearchProvider.notifier).state = v,
+                  onChanged: (v) =>
+                      ref.read(fileManagerSearchProvider.notifier).state = v,
                 ),
               ),
             ),
@@ -236,9 +269,19 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
               ),
             )
           else if (viewMode == ViewMode.grid)
-            _GridView(docs: docs, isDark: isDark, selection: selection, ref: ref)
+            _GridView(
+              docs: docs,
+              isDark: isDark,
+              selection: selection,
+              ref: ref,
+            )
           else
-            _ListView(docs: docs, isDark: isDark, selection: selection, ref: ref),
+            _ListView(
+              docs: docs,
+              isDark: isDark,
+              selection: selection,
+              ref: ref,
+            ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -257,7 +300,9 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
     final chips = [
       _FilterChipData(null, 'All', Icons.apps_rounded),
       _FilterChipData('favorites', '⭐ Starred', Icons.star_rounded),
-      ...typeLabels.map((l) => _FilterChipData(l, l, Icons.description_rounded)),
+      ...typeLabels.map(
+        (l) => _FilterChipData(l, l, Icons.description_rounded),
+      ),
     ];
 
     return SizedBox(
@@ -278,16 +323,25 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
               showCheckmark: false,
               onSelected: (_) {
                 HapticFeedback.selectionClick();
-                ref.read(fileManagerFilterProvider.notifier).state =
-                    selected ? null : chip.value;
+                ref.read(fileManagerFilterProvider.notifier).state = selected
+                    ? null
+                    : chip.value;
               },
-              backgroundColor: isDark ? AppTheme.cardDark2 : const Color(0xFFF3F4F6),
+              backgroundColor: isDark
+                  ? AppTheme.cardDark2
+                  : const Color(0xFFF3F4F6),
               selectedColor: AppTheme.primary.withValues(alpha: 0.15),
               side: selected
                   ? const BorderSide(color: AppTheme.primary, width: 1.5)
-                  : BorderSide(color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                  : BorderSide(
+                      color: isDark
+                          ? AppTheme.borderDark
+                          : AppTheme.borderLight,
+                    ),
               labelStyle: TextStyle(
-                color: selected ? AppTheme.primary : (isDark ? Colors.white70 : AppTheme.textSecondary),
+                color: selected
+                    ? AppTheme.primary
+                    : (isDark ? Colors.white70 : AppTheme.textSecondary),
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 12,
               ),
@@ -298,7 +352,11 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
     );
   }
 
-  Widget _buildStatsBanner(BuildContext context, List<DocumentModel> docs, bool isDark) {
+  Widget _buildStatsBanner(
+    BuildContext context,
+    List<DocumentModel> docs,
+    bool isDark,
+  ) {
     if (docs.isEmpty) return const SizedBox.shrink();
     final totalBytes = docs.fold<int>(0, (s, d) => s + d.fileSizeBytes);
     String fmt(int b) {
@@ -312,7 +370,10 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
       decoration: BoxDecoration(
         color: AppTheme.primary.withValues(alpha: isDark ? 0.1 : 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.15), width: 1),
+        border: Border.all(
+          color: AppTheme.primary.withValues(alpha: 0.15),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -341,24 +402,36 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete ${selection.length} item${selection.length != 1 ? 's' : ''}?'),
+        title: Text(
+          'Delete ${selection.length} item${selection.length != 1 ? 's' : ''}?',
+        ),
         content: const Text('This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: AppTheme.error)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppTheme.error),
+            ),
           ),
         ],
       ),
     );
-    if (confirmed == true && mounted) {
+    if (confirmed == true && context.mounted) {
       for (final id in selection) {
         ref.read(documentsProvider.notifier).deleteDocument(id);
       }
       ref.read(fileManagerSelectionProvider.notifier).state = {};
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${selection.length} item${selection.length != 1 ? 's' : ''} deleted')),
+        SnackBar(
+          content: Text(
+            '${selection.length} item${selection.length != 1 ? 's' : ''} deleted',
+          ),
+        ),
       );
     }
   }
@@ -384,7 +457,12 @@ class _SortButton extends ConsumerWidget {
     );
   }
 
-  PopupMenuItem<SortBy> _sortItem(SortBy v, String label, IconData icon, SortBy current) {
+  PopupMenuItem<SortBy> _sortItem(
+    SortBy v,
+    String label,
+    IconData icon,
+    SortBy current,
+  ) {
     final selected = v == current;
     return PopupMenuItem(
       value: v,
@@ -392,8 +470,16 @@ class _SortButton extends ConsumerWidget {
         children: [
           Icon(icon, size: 18, color: selected ? AppTheme.primary : null),
           const SizedBox(width: 10),
-          Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w400)),
-          if (selected) ...[const Spacer(), const Icon(Icons.check_rounded, size: 16, color: AppTheme.primary)],
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+            ),
+          ),
+          if (selected) ...[
+            const Spacer(),
+            const Icon(Icons.check_rounded, size: 16, color: AppTheme.primary),
+          ],
         ],
       ),
     );
@@ -407,58 +493,73 @@ class _ListView extends StatelessWidget {
   final Set<String> selection;
   final WidgetRef ref;
 
-  const _ListView({required this.docs, required this.isDark, required this.selection, required this.ref});
+  const _ListView({
+    required this.docs,
+    required this.isDark,
+    required this.selection,
+    required this.ref,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final doc = docs[index];
-          final selected = selection.contains(doc.id);
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final doc = docs[index];
+        final selected = selection.contains(doc.id);
 
-          Widget tile = _DocListTile(
-            doc: doc,
-            isDark: isDark,
-            selected: selected,
-            isSelecting: selection.isNotEmpty,
-            onTap: () {
-              if (selection.isNotEmpty) {
-                _toggleSelect(doc.id);
-              } else if (doc.filePath.endsWith('.pdf')) {
-                context.push('/pdf-viewer', extra: {'filePath': doc.filePath, 'title': doc.name});
-              }
-            },
-            onLongPress: () {
-              HapticFeedback.mediumImpact();
+        Widget tile = _DocListTile(
+          doc: doc,
+          isDark: isDark,
+          selected: selected,
+          isSelecting: selection.isNotEmpty,
+          onTap: () {
+            if (selection.isNotEmpty) {
               _toggleSelect(doc.id);
-            },
-            onMoreTap: () => _showOptions(context, doc),
-            onToggleFavorite: () => ref.read(documentsProvider.notifier).toggleFavorite(doc.id),
+            } else if (doc.filePath.endsWith('.pdf')) {
+              context.push(
+                '/pdf-viewer',
+                extra: {'filePath': doc.filePath, 'title': doc.name},
+              );
+            }
+          },
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            _toggleSelect(doc.id);
+          },
+          onMoreTap: () => _showOptions(context, doc),
+          onToggleFavorite: () =>
+              ref.read(documentsProvider.notifier).toggleFavorite(doc.id),
+        );
+
+        if (index < 10) {
+          tile = tile
+              .animate()
+              .fadeIn(
+                delay: Duration(milliseconds: index * 40),
+                duration: 300.ms,
+              )
+              .slideX(
+                begin: -0.05,
+                end: 0,
+                delay: Duration(milliseconds: index * 40),
+                duration: 300.ms,
+              );
+        }
+
+        // Ad every 8 items
+        if (index > 0 && index % 8 == 0) {
+          return Column(
+            children: [
+              tile,
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: Center(child: BannerAdWidget()),
+              ),
+            ],
           );
-
-          if (index < 10) {
-            tile = tile.animate()
-                .fadeIn(delay: Duration(milliseconds: index * 40), duration: 300.ms)
-                .slideX(begin: -0.05, end: 0, delay: Duration(milliseconds: index * 40), duration: 300.ms);
-          }
-
-          // Ad every 8 items
-          if (index > 0 && index % 8 == 0) {
-            return Column(
-              children: [
-                tile,
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: Center(child: BannerAdWidget()),
-                ),
-              ],
-            );
-          }
-          return tile;
-        },
-        childCount: docs.length,
-      ),
+        }
+        return tile;
+      }, childCount: docs.length),
     );
   }
 
@@ -488,7 +589,12 @@ class _GridView extends StatelessWidget {
   final Set<String> selection;
   final WidgetRef ref;
 
-  const _GridView({required this.docs, required this.isDark, required this.selection, required this.ref});
+  const _GridView({
+    required this.docs,
+    required this.isDark,
+    required this.selection,
+    required this.ref,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -501,32 +607,40 @@ class _GridView extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: 0.85,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final doc = docs[index];
-            final selected = selection.contains(doc.id);
-            return _DocGridCard(
-              doc: doc,
-              isDark: isDark,
-              selected: selected,
-              onTap: () {
-                if (selection.isNotEmpty) {
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final doc = docs[index];
+          final selected = selection.contains(doc.id);
+          return _DocGridCard(
+                doc: doc,
+                isDark: isDark,
+                selected: selected,
+                onTap: () {
+                  if (selection.isNotEmpty) {
+                    _toggleSelect(doc.id);
+                  } else if (doc.filePath.endsWith('.pdf')) {
+                    context.push(
+                      '/pdf-viewer',
+                      extra: {'filePath': doc.filePath, 'title': doc.name},
+                    );
+                  }
+                },
+                onLongPress: () {
+                  HapticFeedback.mediumImpact();
                   _toggleSelect(doc.id);
-                } else if (doc.filePath.endsWith('.pdf')) {
-                  context.push('/pdf-viewer', extra: {'filePath': doc.filePath, 'title': doc.name});
-                }
-              },
-              onLongPress: () {
-                HapticFeedback.mediumImpact();
-                _toggleSelect(doc.id);
-              },
-            ).animate()
-                .fadeIn(delay: Duration(milliseconds: index * 40), duration: 300.ms)
-                .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1),
-                    delay: Duration(milliseconds: index * 40), duration: 300.ms);
-          },
-          childCount: docs.length,
-        ),
+                },
+              )
+              .animate()
+              .fadeIn(
+                delay: Duration(milliseconds: index * 40),
+                duration: 300.ms,
+              )
+              .scale(
+                begin: const Offset(0.9, 0.9),
+                end: const Offset(1, 1),
+                delay: Duration(milliseconds: index * 40),
+                duration: 300.ms,
+              );
+        }, childCount: docs.length),
       ),
     );
   }
@@ -599,15 +713,23 @@ class _DocListTile extends StatelessWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: selected ? AppTheme.primary : Colors.transparent,
+                            color: selected
+                                ? AppTheme.primary
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: selected ? AppTheme.primary : AppTheme.textTertiary,
+                              color: selected
+                                  ? AppTheme.primary
+                                  : AppTheme.textTertiary,
                               width: 2,
                             ),
                           ),
                           child: selected
-                              ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                )
                               : null,
                         )
                       : Container(
@@ -618,7 +740,12 @@ class _DocListTile extends StatelessWidget {
                             color: AppTheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Center(child: Text(doc.type.icon, style: const TextStyle(fontSize: 20))),
+                          child: Center(
+                            child: Text(
+                              doc.type.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                          ),
                         ),
                 ),
                 const SizedBox(width: 12),
@@ -626,26 +753,42 @@ class _DocListTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(doc.name,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        doc.name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 3),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppTheme.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(5),
                             ),
-                            child: Text(doc.type.label,
-                                style: const TextStyle(
-                                    fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                            child: Text(
+                              doc.type.label,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primary,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 6),
-                          Text(doc.fileSizeFormatted,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                          Text(
+                            doc.fileSizeFormatted,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                          ),
                         ],
                       ),
                     ],
@@ -660,8 +803,12 @@ class _DocListTile extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Icon(
-                        doc.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                        color: doc.isFavorite ? AppTheme.warning : AppTheme.textTertiary,
+                        doc.isFavorite
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: doc.isFavorite
+                            ? AppTheme.warning
+                            : AppTheme.textTertiary,
                         size: 18,
                       ),
                     ),
@@ -715,7 +862,9 @@ class _DocGridCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: selected ? AppTheme.primary : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+              color: selected
+                  ? AppTheme.primary
+                  : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
               width: selected ? 2 : 1,
             ),
           ),
@@ -731,7 +880,12 @@ class _DocGridCard extends StatelessWidget {
                       color: AppTheme.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Center(child: Text(doc.type.icon, style: const TextStyle(fontSize: 28))),
+                    child: Center(
+                      child: Text(
+                        doc.type.icon,
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                    ),
                   ),
                   if (selected)
                     Positioned.fill(
@@ -740,7 +894,11 @@ class _DocGridCard extends StatelessWidget {
                           color: AppTheme.primary.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                     ),
                 ],
@@ -748,15 +906,23 @@ class _DocGridCard extends StatelessWidget {
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(doc.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
+                child: Text(
+                  doc.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
               ),
               const SizedBox(height: 4),
-              Text(doc.fileSizeFormatted,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+              Text(
+                doc.fileSizeFormatted,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 10),
+              ),
             ],
           ),
         ),
@@ -798,14 +964,23 @@ class _DocOptionsSheet extends StatelessWidget {
                     color: AppTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Center(child: Text(doc.type.icon, style: const TextStyle(fontSize: 20))),
+                  child: Center(
+                    child: Text(
+                      doc.type.icon,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(doc.name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    doc.name,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -817,12 +992,41 @@ class _DocOptionsSheet extends StatelessWidget {
           }),
           _option(context, Icons.share_rounded, 'Share', () async {
             Navigator.pop(context);
-            await Share.shareXFiles([XFile(doc.filePath)]);
+            await SharePlus.instance.share(
+              ShareParams(files: [XFile(doc.filePath)], subject: doc.name),
+            );
           }),
-          _option(context, Icons.star_border_rounded, doc.isFavorite ? 'Remove from Starred' : 'Add to Starred', () {
-            ref.read(documentsProvider.notifier).toggleFavorite(doc.id);
-            Navigator.pop(context);
-          }),
+          _option(
+            context,
+            Icons.drive_file_rename_outline_rounded,
+            'Rename',
+            () {
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.pop(context);
+              _showRenameDialog(context, messenger);
+            },
+          ),
+          if (doc.filePath.toLowerCase().endsWith('.pdf'))
+            _option(context, Icons.print_rounded, 'Print', () async {
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.pop(context);
+              final error = await PrintService.printFile(
+                doc.filePath,
+                doc.name,
+              );
+              if (error != null) {
+                messenger.showSnackBar(SnackBar(content: Text(error)));
+              }
+            }),
+          _option(
+            context,
+            Icons.star_border_rounded,
+            doc.isFavorite ? 'Remove from Starred' : 'Add to Starred',
+            () {
+              ref.read(documentsProvider.notifier).toggleFavorite(doc.id);
+              Navigator.pop(context);
+            },
+          ),
           _option(context, Icons.delete_rounded, 'Delete', () async {
             Navigator.pop(context);
             ref.read(documentsProvider.notifier).deleteDocument(doc.id);
@@ -833,19 +1037,119 @@ class _DocOptionsSheet extends StatelessWidget {
     );
   }
 
-  Widget _option(BuildContext context, IconData icon, String label, VoidCallback onTap,
-      {bool isDestructive = false}) {
+  void _showRenameDialog(
+    BuildContext context,
+    ScaffoldMessengerState messenger,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _RenameDialog(
+        initialName: doc.name,
+        onRename: (name) async {
+          await ref
+              .read(documentsProvider.notifier)
+              .renameDocument(doc.id, name);
+          messenger.showSnackBar(SnackBar(content: Text('Renamed to "$name"')));
+        },
+      ),
+    );
+  }
+
+  Widget _option(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
     return ListTile(
-      leading: Icon(icon, color: isDestructive ? AppTheme.error : null, size: 22),
-      title: Text(label,
-          style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: isDestructive ? AppTheme.error : null,
-              fontSize: 15)),
+      leading: Icon(
+        icon,
+        color: isDestructive ? AppTheme.error : null,
+        size: 22,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: isDestructive ? AppTheme.error : null,
+          fontSize: 15,
+        ),
+      ),
       onTap: () {
         HapticFeedback.lightImpact();
         onTap();
       },
+    );
+  }
+}
+
+// ── Rename Dialog ─────────────────────────────────────────────────────────────
+class _RenameDialog extends StatefulWidget {
+  final String initialName;
+  final Future<void> Function(String name) onRename;
+
+  const _RenameDialog({required this.initialName, required this.onRename});
+
+  @override
+  State<_RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<_RenameDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final name = widget.initialName;
+    _ctrl = TextEditingController(text: name);
+    // Pre-select the name without its extension.
+    final dot = name.toLowerCase().endsWith('.pdf')
+        ? name.length - 4
+        : name.length;
+    _ctrl.selection = TextSelection(baseOffset: 0, extentOffset: dot);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  bool get _valid {
+    final t = _ctrl.text.trim();
+    return t.isNotEmpty && t != widget.initialName;
+  }
+
+  Future<void> _submit() async {
+    if (!_valid) return;
+    final name = _ctrl.text.trim();
+    Navigator.pop(context);
+    await widget.onRename(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Rename'),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (_) => _submit(),
+        decoration: const InputDecoration(hintText: 'Document name'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _valid ? _submit : null,
+          child: const Text('Rename'),
+        ),
+      ],
     );
   }
 }

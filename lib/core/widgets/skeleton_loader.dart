@@ -16,8 +16,9 @@ class SkeletonLoader extends StatelessWidget {
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
           baseColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
-          highlightColor:
-              isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF5F5F5),
+          highlightColor: isDark
+              ? const Color(0xFF3D3D3D)
+              : const Color(0xFFF5F5F5),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Container(
@@ -43,8 +44,9 @@ class ToolCardSkeleton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
       baseColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
-      highlightColor:
-          isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF5F5F5),
+      highlightColor: isDark
+          ? const Color(0xFF3D3D3D)
+          : const Color(0xFFF5F5F5),
       child: Container(
         height: 100,
         decoration: BoxDecoration(

@@ -6,12 +6,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdf_combiner/pdf_combiner.dart';
 import 'package:pdf_combiner/models/merge_input.dart';
-import 'package:pdf_manipulator/pdf_manipulator.dart';
+import 'package:pdf_manipulator/pdf_manipulator.dart' as pm;
+import 'package:pdf_manipulator/io.dart' as pm;
 import '../models/app_result.dart';
+import '../utils/pdf_utils.dart';
 
 /// PDF creation, merge, split, compress, watermark, encrypt service
 class PdfService {
-
   Future<FileOperationResult> createPdfFromText({
     required String text,
     required String fileName,
@@ -26,18 +27,12 @@ class PdfService {
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(32),
           build: (pw.Context context) {
-            return [
-              pw.Text(
-                text,
-                style: pw.TextStyle(fontSize: fontSize),
-              ),
-            ];
+            return [pw.Text(text, style: pw.TextStyle(fontSize: fontSize))];
           },
         ),
       );
 
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$fileName.pdf';
+      final outputPath = await _uniqueOutputPath(fileName);
       final outputFile = File(outputPath);
       final pdfBytes = await pdf.save();
       await outputFile.writeAsBytes(pdfBytes);
@@ -77,16 +72,13 @@ class PdfService {
             pageFormat: pageFormat,
             margin: pw.EdgeInsets.zero,
             build: (context) {
-              return pw.Center(
-                child: pw.Image(image, fit: pw.BoxFit.contain),
-              );
+              return pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain));
             },
           ),
         );
       }
 
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$fileName.pdf';
+      final outputPath = await _uniqueOutputPath(fileName);
       final outputFile = File(outputPath);
       final pdfBytes = await pdf.save();
       await outputFile.writeAsBytes(pdfBytes);
@@ -110,8 +102,7 @@ class PdfService {
   }) async {
     final stopwatch = Stopwatch()..start();
     try {
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
+      final outputPath = await _uniqueOutputPath(outputName);
 
       // Build MergeInput list from file paths
       final inputs = pdfPaths.map((p) => MergeInput.path(p)).toList();
@@ -137,222 +128,245 @@ class PdfService {
     }
   }
 
-  /// Compress a PDF using native pdf_manipulator
+  /// Compress a PDF: downsample and re-encode embedded images.
+  /// [quality] 0-100 — lower means smaller files.
   Future<FileOperationResult> compressPdf({
     required String inputPath,
     required String outputName,
     int quality = 50,
   }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final file = File(inputPath);
-      if (!await file.exists()) {
-        return const FileOperationResult(error: 'Input file not found');
-      }
-
-
-      // Map quality 0-100 to imageScale 0.1-1.0
-      // Lower quality = more compression = smaller scale
-      final imageScale = quality / 100.0;
-      final imageQuality = quality;
-
-      final compressedPath = await PdfManipulator().pdfCompressor(
-        params: PDFCompressorParams(
-          pdfPath: inputPath,
-          imageQuality: imageQuality,
-          imageScale: imageScale,
-        ),
-      );
-
-      if (compressedPath == null) {
-        return const FileOperationResult(error: 'Compression returned null');
-      }
-
-      // Copy to our output directory with the desired name
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
-      await File(compressedPath).copy(outputPath);
-
-      final outputSize = await File(outputPath).length();
-      stopwatch.stop();
-
-      return FileOperationResult(
-        outputPath: outputPath,
-        fileSizeBytes: outputSize,
-        processingTime: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return FileOperationResult(error: 'Failed to compress PDF: $e');
+    if (!await File(inputPath).exists()) {
+      return const FileOperationResult(error: 'Input file not found');
     }
+    // Map quality to a target image resolution (ppi).
+    final ppi = quality <= 30 ? 72.0 : (quality <= 60 ? 150.0 : 220.0);
+    final policy = pm.PdfImagePolicy(
+      colorPpi: ppi,
+      grayPpi: ppi,
+      monoPpi: 300,
+      jpegQuality: quality.clamp(10, 95),
+      convertCmykToRgb: true,
+      recompressJpeg: true,
+    );
+    return _writeWithEngine(
+      outputName,
+      'compress PDF',
+      (pdf, sink) => pdf.compress(_source(inputPath), sink, images: policy),
+    );
   }
 
-  /// Split PDF by page ranges using pdf_manipulator
+  /// Split PDF by 1-indexed page ranges like `["1-3", "4", "5-6"]`.
+  /// Returns one result per range, in order.
   Future<List<FileOperationResult>> splitPdf({
     required String inputPath,
     required List<String> pageRanges,
   }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final results = <FileOperationResult>[];
-
-      final splitPaths = await PdfManipulator().splitPDF(
-        params: PDFSplitterParams(
-          pdfPath: inputPath,
-          pageRanges: pageRanges,
+    final pageCount = await getPageCount(inputPath);
+    if (pageCount == null) {
+      return [const FileOperationResult(error: 'Could not open PDF')];
+    }
+    final baseName = File(inputPath).uri.pathSegments.last.replaceAll(
+      RegExp(r'\.pdf$', caseSensitive: false),
+      '',
+    );
+    final results = <FileOperationResult>[];
+    for (final range in pageRanges) {
+      final pages = parsePageRange(range, pageCount);
+      if (pages == null || pages.isEmpty) {
+        results.add(
+          FileOperationResult(error: 'Range "$range" is outside 1-$pageCount'),
+        );
+        continue;
+      }
+      results.add(
+        await _writeWithEngine(
+          '${baseName}_p$range',
+          'split PDF',
+          (pdf, sink) =>
+              pdf.extractPages(_source(inputPath), sink, pages: pages),
         ),
       );
-
-      if (splitPaths != null) {
-        for (final path in splitPaths) {
-          final file = File(path);
-          final size = await file.length();
-          results.add(FileOperationResult(
-            outputPath: path,
-            fileSizeBytes: size,
-            processingTime: stopwatch.elapsed,
-          ));
-        }
-      }
-
-      stopwatch.stop();
-      return results;
-    } catch (e) {
-      stopwatch.stop();
-      return [FileOperationResult(error: 'Failed to split PDF: $e')];
     }
+    return results;
   }
 
-  /// Rotate PDF pages using pdf_manipulator
-  Future<FileOperationResult> rotatePdfPages({
+  /// Rebuild a PDF with pages in [pageOrder] (0-based indices into the
+  /// original; omitted pages are dropped), rotating each output page by
+  /// [rotations] (original index → clockwise degrees, multiples of 90).
+  Future<FileOperationResult> organizePages({
     required String inputPath,
-    required List<PageRotationInfo> rotations,
+    required List<int> pageOrder,
+    Map<int, int> rotations = const {},
     required String outputName,
   }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final rotatedPath = await PdfManipulator().pdfPageRotator(
-        params: PDFPageRotatorParams(
-          pdfPath: inputPath,
-          pagesRotationInfo: rotations,
-        ),
-      );
-
-      if (rotatedPath == null) {
-        return const FileOperationResult(error: 'Rotation returned null');
-      }
-
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
-      await File(rotatedPath).copy(outputPath);
-
-      final outputSize = await File(outputPath).length();
-      stopwatch.stop();
-
-      return FileOperationResult(
-        outputPath: outputPath,
-        fileSizeBytes: outputSize,
-        processingTime: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return FileOperationResult(error: 'Failed to rotate pages: $e');
+    if (pageOrder.isEmpty) {
+      return const FileOperationResult(error: 'At least one page must be kept');
     }
+    return _writeWithEngine(outputName, 'organize pages', (pdf, sink) async {
+      final editor = await pdf.edit(_source(inputPath));
+      try {
+        await editor.selectPages(pageOrder);
+        for (var i = 0; i < pageOrder.length; i++) {
+          final degrees = (rotations[pageOrder[i]] ?? 0) % 360;
+          if (degrees != 0) await editor.rotatePage(i, degrees: degrees);
+        }
+        await editor.save(sink);
+      } finally {
+        await editor.dispose();
+      }
+    });
   }
 
-  /// Add watermark to PDF using pdf_manipulator
+  /// Add a diagonal text watermark to every page.
   Future<FileOperationResult> watermarkPdf({
     required String inputPath,
     required String watermarkText,
     required String outputName,
     double fontSize = 50,
     double opacity = 0.3,
-  }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final watermarkedPath = await PdfManipulator().pdfWatermark(
-        params: PDFWatermarkParams(
-          pdfPath: inputPath,
-          text: watermarkText,
-          fontSize: fontSize,
-          opacity: opacity,
-          watermarkLayer: WatermarkLayer.overContent,
-          positionType: PositionType.center,
-        ),
-      );
-
-      if (watermarkedPath == null) {
-        return const FileOperationResult(error: 'Watermarking returned null');
-      }
-
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
-      await File(watermarkedPath).copy(outputPath);
-
-      final outputSize = await File(outputPath).length();
-      stopwatch.stop();
-
-      return FileOperationResult(
-        outputPath: outputPath,
-        fileSizeBytes: outputSize,
-        processingTime: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return FileOperationResult(error: 'Failed to watermark PDF: $e');
-    }
+  }) {
+    return _writeWithEngine(
+      outputName,
+      'watermark PDF',
+      (pdf, sink) => pdf.watermark(
+        _source(inputPath),
+        sink,
+        text: watermarkText,
+        style: pm.PdfWatermarkStyle(fontSize: fontSize, opacity: opacity),
+      ),
+    );
   }
 
-  /// Encrypt PDF with password using pdf_manipulator
+  /// Encrypt PDF with an AES-256 password.
   Future<FileOperationResult> encryptPdf({
     required String inputPath,
     required String password,
     required String outputName,
     bool allowPrinting = true,
     bool allowCopy = false,
-  }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final encryptedPath = await PdfManipulator().pdfEncryption(
-        params: PDFEncryptionParams(
-          pdfPath: inputPath,
+  }) {
+    return _writeWithEngine(
+      outputName,
+      'encrypt PDF',
+      (pdf, sink) => pdf.encrypt(
+        _source(inputPath),
+        sink,
+        encryption: pm.PdfEncryptionConfig(
           ownerPassword: password,
           userPassword: password,
-          encryptionAES256: true,
-          allowPrinting: allowPrinting,
-          allowCopy: allowCopy,
+          permissions: pm.PdfPermissions(
+            print: allowPrinting,
+            printHq: allowPrinting,
+            copy: allowCopy,
+          ),
         ),
-      );
+      ),
+    );
+  }
 
-      if (encryptedPath == null) {
-        return const FileOperationResult(error: 'Encryption returned null');
+  /// Remove password protection, given the correct password.
+  Future<FileOperationResult> decryptPdf({
+    required String inputPath,
+    required String password,
+    required String outputName,
+  }) {
+    return _writeWithEngine(
+      outputName,
+      'unlock PDF',
+      (pdf, sink) => pdf.decrypt(_source(inputPath), sink, password: password),
+    );
+  }
+
+  /// Whether the PDF needs a password to open.
+  Future<bool> isPasswordProtected(String path) async {
+    try {
+      final doc = await _engine.open(_source(path));
+      await doc.dispose();
+      return false;
+    } on pm.PdfPasswordRequired {
+      return true;
+    } on pm.PdfWrongPassword {
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Number of pages, or null if the file can't be opened.
+  Future<int?> getPageCount(String path) async {
+    try {
+      final doc = await _engine.open(_source(path));
+      try {
+        return doc.pageCount;
+      } finally {
+        await doc.dispose();
       }
+    } catch (_) {
+      return null;
+    }
+  }
 
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
-      await File(encryptedPath).copy(outputPath);
+  /// Streams PNG thumbnails of every page, in page order.
+  Stream<Uint8List> renderThumbnails(String path, {int size = 320}) async* {
+    final doc = await _engine.open(_source(path));
+    try {
+      await for (final page in doc.render(
+        pages: const pm.PdfPages.all(),
+        size: pm.PdfRenderSize.thumbnail(size),
+      )) {
+        yield page.data;
+      }
+    } finally {
+      await doc.dispose();
+    }
+  }
 
-      final outputSize = await File(outputPath).length();
+  static pm.Pdf? _pdfEngine;
+  static pm.Pdf get _engine => _pdfEngine ??= pm.Pdf();
+
+  static pm.FileSource _source(String path) => pm.FileSource(File(path));
+
+  /// Runs a pdf_manipulator operation that writes into a new output file.
+  Future<FileOperationResult> _writeWithEngine(
+    String outputName,
+    String action,
+    Future<void> Function(pm.Pdf pdf, pm.DataSink sink) op,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+    final outputPath = await _uniqueOutputPath(outputName);
+    final outFile = File(outputPath);
+    try {
+      final sink = await pm.FileSink.create(outFile);
+      try {
+        await op(_engine, sink);
+      } finally {
+        await sink.close();
+      }
+      final size = await outFile.length();
       stopwatch.stop();
-
       return FileOperationResult(
         outputPath: outputPath,
-        fileSizeBytes: outputSize,
+        fileSizeBytes: size,
         processingTime: stopwatch.elapsed,
       );
     } catch (e) {
-      stopwatch.stop();
-      return FileOperationResult(error: 'Failed to encrypt PDF: $e');
+      if (await outFile.exists()) await outFile.delete();
+      final reason = switch (e) {
+        pm.PdfWrongPassword() => 'Incorrect password',
+        pm.PdfPasswordRequired() => 'This PDF is password-protected',
+        pm.PdfError(:final message) => message,
+        _ => '$e',
+      };
+      return FileOperationResult(error: 'Failed to $action: $reason');
     }
   }
 
   /// Convert PDF pages to images using pdf_combiner
-  Future<List<String>> pdfToImages({
-    required String pdfPath,
-  }) async {
+  Future<List<String>> pdfToImages({required String pdfPath}) async {
     try {
       final outputDir = await _getOutputDirectory();
-      final imagesDir = '$outputDir/pdf_images_${DateTime.now().millisecondsSinceEpoch}';
+      final imagesDir =
+          '$outputDir/pdf_images_${DateTime.now().millisecondsSinceEpoch}';
       await Directory(imagesDir).create(recursive: true);
 
       final input = MergeInput.path(pdfPath);
@@ -364,80 +378,6 @@ class PdfService {
       return imagePaths;
     } catch (e) {
       return [];
-    }
-  }
-
-  /// Delete specific pages from PDF using pdf_manipulator
-  Future<FileOperationResult> deletePages({
-    required String inputPath,
-    required List<int> pageNumbers,
-    required String outputName,
-  }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final resultPath = await PdfManipulator().pdfPageDeleter(
-        params: PDFPageDeleterParams(
-          pdfPath: inputPath,
-          pageNumbers: pageNumbers,
-        ),
-      );
-
-      if (resultPath == null) {
-        return const FileOperationResult(error: 'Page deletion returned null');
-      }
-
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
-      await File(resultPath).copy(outputPath);
-
-      final outputSize = await File(outputPath).length();
-      stopwatch.stop();
-
-      return FileOperationResult(
-        outputPath: outputPath,
-        fileSizeBytes: outputSize,
-        processingTime: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return FileOperationResult(error: 'Failed to delete pages: $e');
-    }
-  }
-
-  /// Reorder PDF pages using pdf_manipulator
-  Future<FileOperationResult> reorderPages({
-    required String inputPath,
-    required List<int> newPageOrder,
-    required String outputName,
-  }) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      final resultPath = await PdfManipulator().pdfPageReorder(
-        params: PDFPageReorderParams(
-          pdfPath: inputPath,
-          pageNumbers: newPageOrder,
-        ),
-      );
-
-      if (resultPath == null) {
-        return const FileOperationResult(error: 'Page reorder returned null');
-      }
-
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$outputName.pdf';
-      await File(resultPath).copy(outputPath);
-
-      final outputSize = await File(outputPath).length();
-      stopwatch.stop();
-
-      return FileOperationResult(
-        outputPath: outputPath,
-        fileSizeBytes: outputSize,
-        processingTime: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return FileOperationResult(error: 'Failed to reorder pages: $e');
     }
   }
 
@@ -462,7 +402,9 @@ class PdfService {
           final decoded = img.decodeImage(imageBytes);
           if (decoded != null) {
             final adjusted = img.adjustColor(decoded, contrast: 1.2);
-            imageBytes = Uint8List.fromList(img.encodeJpg(adjusted, quality: 90));
+            imageBytes = Uint8List.fromList(
+              img.encodeJpg(adjusted, quality: 90),
+            );
           }
         }
 
@@ -471,15 +413,13 @@ class PdfService {
           pw.Page(
             pageFormat: PdfPageFormat.a4,
             margin: const pw.EdgeInsets.all(16),
-            build: (context) => pw.Center(
-              child: pw.Image(image, fit: pw.BoxFit.contain),
-            ),
+            build: (context) =>
+                pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
           ),
         );
       }
 
-      final outputDir = await _getOutputDirectory();
-      final outputPath = '$outputDir/$fileName.pdf';
+      final outputPath = await _uniqueOutputPath(fileName);
       final pdfBytes = await pdf.save();
       await File(outputPath).writeAsBytes(pdfBytes);
 
@@ -561,12 +501,13 @@ class PdfService {
 
       // Save signature page to temp file
       final outputDir = await _getOutputDirectory();
-      final tempSignaturePath = '$outputDir/_temp_signature_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final tempSignaturePath =
+          '$outputDir/_temp_signature_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final signaturePageBytes = await signaturePdf.save();
       await File(tempSignaturePath).writeAsBytes(signaturePageBytes);
 
       // Merge original PDF + signature page using pdf_combiner
-      final outputPath = '$outputDir/$outputName.pdf';
+      final outputPath = await _uniqueOutputPath(outputName);
       final inputs = [
         MergeInput.path(pdfPath),
         MergeInput.path(tempSignaturePath),
@@ -604,6 +545,17 @@ class PdfService {
       await outputDir.create(recursive: true);
     }
     return outputDir.path;
+  }
+
+  /// `<docs>/evergreen_pdfs/<name>.pdf`, suffixed " (n)" if taken.
+  Future<String> _uniqueOutputPath(String name) async {
+    final dir = await _getOutputDirectory();
+    final safe = sanitizeFileName(name);
+    var path = '$dir/$safe.pdf';
+    for (var n = 1; await File(path).exists(); n++) {
+      path = '$dir/$safe ($n).pdf';
+    }
+    return path;
   }
 
   String generateFileName(String prefix) {

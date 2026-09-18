@@ -52,12 +52,13 @@ class OcrService {
         }
       }
 
-      return AppResult.success(OcrResult(
-        text: recognized.text,
-        confidence:
-            totalElements > 0 ? totalConfidence / totalElements : 0,
-        blocks: blocks,
-      ));
+      return AppResult.success(
+        OcrResult(
+          text: recognized.text,
+          confidence: totalElements > 0 ? totalConfidence / totalElements : 0,
+          blocks: blocks,
+        ),
+      );
     } catch (e) {
       return AppResult.failure('OCR failed: $e');
     }
@@ -65,7 +66,8 @@ class OcrService {
 
   /// Perform OCR on multiple images and combine results
   Future<AppResult<OcrResult>> recognizeTextFromMultiple(
-      List<String> imagePaths) async {
+    List<String> imagePaths,
+  ) async {
     try {
       final allBlocks = <OcrBlock>[];
       final textParts = <String>[];
@@ -89,11 +91,13 @@ class OcrService {
         return AppResult.failure('No text found in any image');
       }
 
-      return AppResult.success(OcrResult(
-        text: textParts.join('\n\n--- Page Break ---\n\n'),
-        confidence: totalBlocks > 0 ? totalConfidence / totalBlocks : 0,
-        blocks: allBlocks,
-      ));
+      return AppResult.success(
+        OcrResult(
+          text: textParts.join('\n\n--- Page Break ---\n\n'),
+          confidence: totalBlocks > 0 ? totalConfidence / totalBlocks : 0,
+          blocks: allBlocks,
+        ),
+      );
     } catch (e) {
       return AppResult.failure('Multi-page OCR failed: $e');
     }

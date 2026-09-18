@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ad_widgets.dart';
-import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/models/document_model.dart';
 
@@ -63,7 +61,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           SliverToBoxAdapter(child: _buildStats(context, documents, isDark)),
 
           // ── Core Tools ───────────────────────────────────────────────────
-          SliverToBoxAdapter(child: _buildSectionHeader(context, 'Core Tools', null)),
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(context, 'Core Tools', null),
+          ),
 
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -74,12 +74,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 crossAxisSpacing: 12,
                 childAspectRatio: 0.78,
               ),
-              delegate: SliverChildListDelegate(_buildCoreTools(context, isDark)),
+              delegate: SliverChildListDelegate(
+                _buildCoreTools(context, isDark),
+              ),
             ),
           ),
 
           // ── Advanced Tools ───────────────────────────────────────────────
-          SliverToBoxAdapter(child: _buildSectionHeader(context, 'Advanced Tools', null)),
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(context, 'Advanced Tools', null),
+          ),
 
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -90,7 +94,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 crossAxisSpacing: 12,
                 childAspectRatio: 0.78,
               ),
-              delegate: SliverChildListDelegate(_buildAdvancedTools(context, isDark)),
+              delegate: SliverChildListDelegate(
+                _buildAdvancedTools(context, isDark),
+              ),
             ),
           ),
 
@@ -116,46 +122,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: EmptyStateWidget(
                 icon: Icons.description_outlined,
                 title: 'No Documents Yet',
-                subtitle: 'Scan a document or convert an image to PDF to get started',
+                subtitle:
+                    'Scan a document or convert an image to PDF to get started',
                 actionLabel: 'Quick Scan',
                 onAction: () => context.push('/scanner'),
               ),
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= documents.length || index >= 6) return null;
-                  return _DocumentTile(
-                    doc: documents[index],
-                    isDark: isDark,
-                    onDelete: () {
-                      ref.read(documentsProvider.notifier).deleteDocument(documents[index].id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                              const SizedBox(width: 8),
-                              Text('${documents[index].name} deleted'),
-                            ],
-                          ),
-                          duration: const Duration(seconds: 2),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                if (index >= documents.length || index >= 6) return null;
+                return _DocumentTile(
+                  doc: documents[index],
+                  isDark: isDark,
+                  onDelete: () {
+                    ref
+                        .read(documentsProvider.notifier)
+                        .deleteDocument(documents[index].id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text('${documents[index].name} deleted'),
+                          ],
                         ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  onToggleFavorite: () => ref
+                      .read(documentsProvider.notifier)
+                      .toggleFavorite(documents[index].id),
+                  onTap: () {
+                    final doc = documents[index];
+                    if (doc.filePath.endsWith('.pdf')) {
+                      context.push(
+                        '/pdf-viewer',
+                        extra: {'filePath': doc.filePath, 'title': doc.name},
                       );
-                    },
-                    onToggleFavorite: () =>
-                        ref.read(documentsProvider.notifier).toggleFavorite(documents[index].id),
-                    onTap: () {
-                      final doc = documents[index];
-                      if (doc.filePath.endsWith('.pdf')) {
-                        context.push('/pdf-viewer', extra: {'filePath': doc.filePath, 'title': doc.name});
-                      }
-                    },
-                  );
-                },
-                childCount: documents.length.clamp(0, 6),
-              ),
+                    }
+                  },
+                );
+              }, childCount: documents.length.clamp(0, 6)),
             ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -183,7 +197,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.eco_rounded, color: Colors.white, size: 18),
+                  child: const Icon(
+                    Icons.eco_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -192,7 +210,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.secondary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
@@ -245,7 +266,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           )
                         : null,
                   ),
-                  onChanged: (v) => ref.read(searchQueryProvider.notifier).set(v),
+                  onChanged: (v) =>
+                      ref.read(searchQueryProvider.notifier).set(v),
                 ),
               ),
             )
@@ -256,131 +278,157 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   // ── Hero Section ─────────────────────────────────────────────────────────
   Widget _buildHero(BuildContext context, bool isDark, Size size) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      height: 180,
-      decoration: BoxDecoration(
-        gradient: AppTheme.heroGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppTheme.cardShadow(AppTheme.primary),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Background orbs
-          Positioned(
-            right: -30,
-            top: -30,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
-                shape: BoxShape.circle,
-              ),
-            ),
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          height: 180,
+          decoration: BoxDecoration(
+            gradient: AppTheme.heroGradient,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppTheme.cardShadow(AppTheme.primary),
           ),
-          Positioned(
-            right: 40,
-            bottom: -40,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Your Document\nSuper App 🌿',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          height: 1.2,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Scan · Merge · Compress · Sign',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          context.push('/scanner');
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.document_scanner_rounded, size: 16, color: AppTheme.primaryDark),
-                              SizedBox(width: 6),
-                              Text(
-                                'Quick Scan',
-                                style: TextStyle(
-                                  color: AppTheme.primaryDark,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Decorative icon
-                Container(
-                  width: 72,
-                  height: 72,
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              // Background orbs
+              Positioned(
+                right: -30,
+                top: -30,
+                child: Container(
+                  width: 160,
+                  height: 160,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                    color: Colors.white.withValues(alpha: 0.07),
+                    shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.eco_rounded, size: 38, color: Colors.white),
                 ),
-              ],
-            ),
+              ),
+              Positioned(
+                right: 40,
+                bottom: -40,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Your Document\nSuper App 🌿',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1.2,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Scan · Merge · Compress · Sign',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              context.push('/scanner');
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.document_scanner_rounded,
+                                    size: 16,
+                                    color: AppTheme.primaryDark,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Quick Scan',
+                                    style: TextStyle(
+                                      color: AppTheme.primaryDark,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Decorative icon
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        size: 38,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1, end: 0, duration: 500.ms, curve: Curves.easeOutCubic);
+        )
+        .animate()
+        .fadeIn(duration: 500.ms)
+        .slideY(
+          begin: 0.1,
+          end: 0,
+          duration: 500.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   // ── Stats Row ─────────────────────────────────────────────────────────────
-  Widget _buildStats(BuildContext context, List<DocumentModel> docs, bool isDark) {
+  Widget _buildStats(
+    BuildContext context,
+    List<DocumentModel> docs,
+    bool isDark,
+  ) {
     final total = docs.length;
     final bytes = docs.fold<int>(0, (s, d) => s + d.fileSizeBytes);
     final favorites = docs.where((d) => d.isFavorite).length;
@@ -395,25 +443,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Row(
         children: [
-          _StatPill(label: '$total', sub: 'Docs', icon: Icons.description_rounded, color: AppTheme.primary),
+          _StatPill(
+            label: '$total',
+            sub: 'Docs',
+            icon: Icons.description_rounded,
+            color: AppTheme.primary,
+          ),
           const SizedBox(width: 10),
-          _StatPill(label: fmt(bytes), sub: 'Size', icon: Icons.storage_rounded, color: AppTheme.info),
+          _StatPill(
+            label: fmt(bytes),
+            sub: 'Size',
+            icon: Icons.storage_rounded,
+            color: AppTheme.info,
+          ),
           const SizedBox(width: 10),
-          _StatPill(label: '$favorites', sub: 'Starred', icon: Icons.star_rounded, color: AppTheme.warning),
+          _StatPill(
+            label: '$favorites',
+            sub: 'Starred',
+            icon: Icons.star_rounded,
+            color: AppTheme.warning,
+          ),
         ],
       ),
     ).animate().fadeIn(delay: 150.ms, duration: 400.ms);
   }
 
   // ── Section Header ────────────────────────────────────────────────────────
-  Widget _buildSectionHeader(BuildContext context, String title, VoidCallback? onSeeAll) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    VoidCallback? onSeeAll,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Row(
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const Spacer(),
           if (onSeeAll != null)
@@ -422,7 +491,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('See All', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    'See All',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   SizedBox(width: 2),
                   Icon(Icons.chevron_right_rounded, size: 16),
                 ],
@@ -450,8 +522,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   List<Widget> _buildAdvancedTools(BuildContext context, bool isDark) {
     const tools = [
+      _Tool('Organize\nPages', Icons.view_agenda_rounded, '/organize-pdf', 12),
       _Tool('Watermark', Icons.water_drop_rounded, '/watermark-pdf', 8),
       _Tool('Encrypt\nPDF', Icons.lock_rounded, '/encrypt-pdf', 9),
+      _Tool('Unlock\nPDF', Icons.lock_open_rounded, '/unlock-pdf', 13),
       _Tool('PDF to\nImage', Icons.photo_library_rounded, '/pdf-to-image', 10),
       _Tool('ID\nPhoto', Icons.badge_rounded, '/id-photo', 11),
     ];
@@ -462,61 +536,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final gradient = AppTheme.toolGradients[tool.gradientIndex];
 
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        context.push(tool.route);
-      },
-      child: AnimatedScale(
-        scale: 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-              width: 1,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push(tool.route);
+          },
+          child: AnimatedScale(
+            scale: 1.0,
+            duration: const Duration(milliseconds: 150),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Gradient icon
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: gradient,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (gradient.colors.first).withValues(
+                            alpha: 0.35,
+                          ),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(tool.icon, color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    tool.label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : AppTheme.textPrimary,
+                      height: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Gradient icon
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (gradient.colors.first).withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Icon(tool.icon, color: Colors.white, size: 22),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                tool.label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white.withValues(alpha: 0.85) : AppTheme.textPrimary,
-                  height: 1.2,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-              ),
-            ],
-          ),
-        ),
-      ),
-    )
+        )
         .animate()
-        .fadeIn(delay: Duration(milliseconds: 80 + tool.gradientIndex * 35), duration: 400.ms)
+        .fadeIn(
+          delay: Duration(milliseconds: 80 + tool.gradientIndex * 35),
+          duration: 400.ms,
+        )
         .scale(
           delay: Duration(milliseconds: 80 + tool.gradientIndex * 35),
           begin: const Offset(0.75, 0.75),
@@ -536,7 +617,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             borderRadius: const BorderRadius.all(Radius.circular(50)),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.3 + 0.15 * _fabPulse.value),
+                color: AppTheme.primary.withValues(
+                  alpha: 0.3 + 0.15 * _fabPulse.value,
+                ),
                 blurRadius: 20 + 8 * _fabPulse.value,
                 spreadRadius: 2 * _fabPulse.value,
               ),
@@ -553,7 +636,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         icon: const Icon(Icons.add_rounded),
         label: const Text('New'),
       ),
-    ).animate().scale(delay: 300.ms, duration: 400.ms, curve: Curves.elasticOut);
+    ).animate().scale(
+      delay: 300.ms,
+      duration: 400.ms,
+      curve: Curves.elasticOut,
+    );
   }
 
   // ── Quick Actions Sheet ───────────────────────────────────────────────────
@@ -574,7 +661,12 @@ class _StatPill extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _StatPill({required this.label, required this.sub, required this.icon, required this.color});
+  const _StatPill({
+    required this.label,
+    required this.sub,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -585,7 +677,10 @@ class _StatPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: isDark ? 0.12 : 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: isDark ? 0.2 : 0.15), width: 1),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
@@ -594,8 +689,22 @@ class _StatPill extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
-                Text(sub, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w500)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: color.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ],
@@ -631,7 +740,9 @@ class _DocumentTile extends StatelessWidget {
         padding: const EdgeInsets.only(right: 24),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+          ),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Column(
@@ -639,25 +750,39 @@ class _DocumentTile extends StatelessWidget {
           children: [
             Icon(Icons.delete_rounded, color: Colors.white, size: 22),
             SizedBox(height: 2),
-            Text('Delete', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete Document?'),
-            content: Text('Are you sure you want to delete "${doc.name}"?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete', style: TextStyle(color: AppTheme.error)),
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete Document?'),
+                content: Text('Are you sure you want to delete "${doc.name}"?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: AppTheme.error),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ) ?? false;
+            ) ??
+            false;
       },
       onDismissed: (_) => onDelete(),
       child: Container(
@@ -672,7 +797,10 @@ class _DocumentTile extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight, width: 1),
+                border: Border.all(
+                  color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -685,7 +813,10 @@ class _DocumentTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Text(doc.type.icon, style: const TextStyle(fontSize: 20)),
+                      child: Text(
+                        doc.type.icon,
+                        style: const TextStyle(fontSize: 20),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -696,7 +827,8 @@ class _DocumentTile extends StatelessWidget {
                       children: [
                         Text(
                           doc.name,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -704,23 +836,38 @@ class _DocumentTile extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppTheme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 doc.type.label,
-                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.primary),
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.primary,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text(doc.fileSizeFormatted,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                            Text(
+                              doc.fileSizeFormatted,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                            ),
                             if (doc.pageCount > 1) ...[
                               const SizedBox(width: 6),
-                              Text('${doc.pageCount} pg',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                              Text(
+                                '${doc.pageCount} pg',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                              ),
                             ],
                           ],
                         ),
@@ -736,8 +883,12 @@ class _DocumentTile extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(6),
                       child: Icon(
-                        doc.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                        color: doc.isFavorite ? AppTheme.warning : AppTheme.textTertiary,
+                        doc.isFavorite
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: doc.isFavorite
+                            ? AppTheme.warning
+                            : AppTheme.textTertiary,
                         size: 20,
                       ),
                     ),
@@ -758,11 +909,48 @@ class _QuickActionsSheet extends StatelessWidget {
   const _QuickActionsSheet({required this.isDark});
 
   static const _actions = [
-    _QAction('Scan Document', 'Camera scan & auto-enhance', Icons.document_scanner_rounded, '/scanner', 0),
-    _QAction('Image to PDF', 'Convert photos to PDF', Icons.image_rounded, '/image-to-pdf', 1),
-    _QAction('Merge PDFs', 'Combine multiple PDFs', Icons.merge_rounded, '/merge-pdf', 2),
-    _QAction('Extract Text (OCR)', 'Get text from images', Icons.text_fields_rounded, '/ocr', 6),
-    _QAction('Text to PDF', 'Type & export as PDF', Icons.notes_rounded, '/text-to-pdf', 7),
+    _QAction(
+      'Scan Document',
+      'Camera scan & auto-enhance',
+      Icons.document_scanner_rounded,
+      '/scanner',
+      0,
+    ),
+    _QAction(
+      'Image to PDF',
+      'Convert photos to PDF',
+      Icons.image_rounded,
+      '/image-to-pdf',
+      1,
+    ),
+    _QAction(
+      'Merge PDFs',
+      'Combine multiple PDFs',
+      Icons.merge_rounded,
+      '/merge-pdf',
+      2,
+    ),
+    _QAction(
+      'Organize Pages',
+      'Reorder, rotate & remove pages',
+      Icons.view_agenda_rounded,
+      '/organize-pdf',
+      12,
+    ),
+    _QAction(
+      'Extract Text (OCR)',
+      'Get text from images',
+      Icons.text_fields_rounded,
+      '/ocr',
+      6,
+    ),
+    _QAction(
+      'Text to PDF',
+      'Type & export as PDF',
+      Icons.notes_rounded,
+      '/text-to-pdf',
+      7,
+    ),
   ];
 
   @override
@@ -786,7 +974,10 @@ class _QuickActionsSheet extends StatelessWidget {
             Row(
               children: [
                 const SizedBox(width: 4),
-                Text('Create New', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Create New',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -794,23 +985,50 @@ class _QuickActionsSheet extends StatelessWidget {
               final action = e.value;
               final gradient = AppTheme.toolGradients[action.gradientIndex];
               return ListTile(
-                leading: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(gradient: gradient, borderRadius: BorderRadius.circular(12)),
-                  child: Icon(action.icon, color: Colors.white, size: 20),
-                ),
-                title: Text(action.label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                subtitle: Text(action.sub, style: const TextStyle(fontSize: 12)),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context);
-                  context.push(action.route);
-                },
-              ).animate().fadeIn(delay: Duration(milliseconds: e.key * 50), duration: 300.ms)
-                  .slideX(begin: -0.1, end: 0, delay: Duration(milliseconds: e.key * 50), duration: 300.ms);
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: gradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(action.icon, color: Colors.white, size: 20),
+                    ),
+                    title: Text(
+                      action.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: Text(
+                      action.sub,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                      context.push(action.route);
+                    },
+                  )
+                  .animate()
+                  .fadeIn(
+                    delay: Duration(milliseconds: e.key * 50),
+                    duration: 300.ms,
+                  )
+                  .slideX(
+                    begin: -0.1,
+                    end: 0,
+                    delay: Duration(milliseconds: e.key * 50),
+                    duration: 300.ms,
+                  );
             }),
           ],
         ),
@@ -834,5 +1052,11 @@ class _QAction {
   final IconData icon;
   final String route;
   final int gradientIndex;
-  const _QAction(this.label, this.sub, this.icon, this.route, this.gradientIndex);
+  const _QAction(
+    this.label,
+    this.sub,
+    this.icon,
+    this.route,
+    this.gradientIndex,
+  );
 }

@@ -103,6 +103,8 @@ enum DocumentType {
   watermarkedPdf,
   encryptedPdf,
   textPdf,
+  organizedPdf,
+  unlockedPdf,
   other,
 }
 
@@ -133,6 +135,10 @@ extension DocumentTypeExtension on DocumentType {
         return 'Encrypted';
       case DocumentType.textPdf:
         return 'Text PDF';
+      case DocumentType.organizedPdf:
+        return 'Organized';
+      case DocumentType.unlockedPdf:
+        return 'Unlocked';
       case DocumentType.other:
         return 'Other';
     }
@@ -164,6 +170,10 @@ extension DocumentTypeExtension on DocumentType {
         return '🔒';
       case DocumentType.textPdf:
         return '📝';
+      case DocumentType.organizedPdf:
+        return '🗂️';
+      case DocumentType.unlockedPdf:
+        return '🔓';
       case DocumentType.other:
         return '📋';
     }
