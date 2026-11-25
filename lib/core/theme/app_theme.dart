@@ -780,6 +780,8 @@ class AppTheme {
   // Legacy & dynamic resolution helpers
   static const Color primaryGreen = primary;
   static const Color surface = surfaceLight;
+  static const Color background = surfaceLight;
+  static const Color backgroundDark = surfaceDark;
 
   static Color surfaceColor(bool isDark) => isDark ? surfaceDark : surfaceLight;
   static Color cardColor(bool isDark) => isDark ? cardDark : cardLight;

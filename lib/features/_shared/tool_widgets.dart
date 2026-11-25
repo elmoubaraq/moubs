@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 
 export '../../core/widgets/glass_card.dart';
 
 /// Gradient sliver app bar for all tool screens
 class ToolSliverHeader extends StatelessWidget {
   final String title;
-  final String? subtitle;
+  final String subtitle;
   final LinearGradient gradient;
   final IconData icon;
   final List<Widget>? actions;
@@ -18,7 +18,7 @@ class ToolSliverHeader extends StatelessWidget {
   const ToolSliverHeader({
     super.key,
     required this.title,
-    this.subtitle,
+    this.subtitle = '',
     required this.gradient,
     required this.icon,
     this.actions,
@@ -27,7 +27,7 @@ class ToolSliverHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: subtitle != null && subtitle!.isNotEmpty ? 140 : 120,
+      expandedHeight: 140,
       pinned: true,
       actions: actions,
       flexibleSpace: FlexibleSpaceBar(
@@ -67,16 +67,14 @@ class ToolSliverHeader extends StatelessWidget {
                                 color: Colors.white,
                               ),
                             ),
-                            if (subtitle != null && subtitle!.isNotEmpty) ...[
-                              const SizedBox(height: 2),
+                            if (subtitle.isNotEmpty)
                               Text(
-                                subtitle!,
+                                subtitle,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.85),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                 ),
                               ),
-                            ],
                           ],
                         ),
                       ),
@@ -111,124 +109,123 @@ class BottomActionBar extends StatelessWidget {
   const BottomActionBar({
     super.key,
     required this.gradient,
-    String? primaryLabel,
-    IconData? primaryIcon,
-    bool? enabled,
-    bool? isLoading,
-    VoidCallback? onPrimary,
-    String? label,
-    IconData? icon,
-    VoidCallback? onPressed,
+    required this.primaryLabel,
+    required this.primaryIcon,
+    required this.enabled,
+    required this.isLoading,
+    required this.onPrimary,
     this.secondaryLabel,
     this.secondaryIcon,
     this.onSecondary,
-  }) : primaryLabel = primaryLabel ?? label ?? '',
-       primaryIcon = primaryIcon ?? icon ?? Icons.arrow_forward_rounded,
-       enabled = enabled ?? true,
-       isLoading = isLoading ?? false,
-       onPrimary = onPrimary ?? onPressed ?? _noop;
-
-  static void _noop() {}
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        MediaQuery.of(context).padding.bottom + 12,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          if (secondaryLabel != null && onSecondary != null) ...[
-            OutlinedButton.icon(
-              icon: Icon(secondaryIcon, size: 18),
-              label: Text(secondaryLabel!),
-              onPressed: onSecondary,
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                gradient: enabled ? gradient : null,
-                color: enabled
-                    ? null
-                    : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: enabled
-                    ? [
-                        BoxShadow(
-                          color: gradient.colors.first.withValues(alpha: 0.35),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: enabled && !isLoading
-                      ? () {
-                          HapticFeedback.mediumImpact();
-                          onPrimary();
-                        }
-                      : null,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  primaryIcon,
-                                  color: enabled
-                                      ? Colors.white
-                                      : AppTheme.textTertiary,
-                                  size: 20,
+        child: ResponsiveCenter(
+          maxWidth: Responsive.maxToolFormWidth,
+          child: SizedBox(
+            height: 52,
+            child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (secondaryLabel != null && onSecondary != null) ...[
+                OutlinedButton.icon(
+                  icon: Icon(secondaryIcon, size: 18),
+                  label: Text(secondaryLabel!),
+                  onPressed: onSecondary,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    gradient: enabled ? gradient : null,
+                    color: enabled
+                        ? null
+                        : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: enabled
+                        ? [
+                            BoxShadow(
+                              color: gradient.colors.first.withValues(alpha: 0.35),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: enabled && !isLoading
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              onPrimary();
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Center(
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  primaryLabel,
-                                  style: TextStyle(
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    primaryIcon,
                                     color: enabled
                                         ? Colors.white
                                         : AppTheme.textTertiary,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
+                                    size: 20,
                                   ),
-                                ),
-                              ],
-                            ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    primaryLabel,
+                                    style: TextStyle(
+                                      color: enabled
+                                          ? Colors.white
+                                          : AppTheme.textTertiary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
+        ),
       ),
     );
   }
@@ -241,15 +238,22 @@ class FilePickerZone extends StatelessWidget {
   final String accept;
   final LinearGradient gradient;
   final VoidCallback onTap;
+  final IconData? icon;
 
   const FilePickerZone({
     super.key,
-    this.selectedPath,
-    required this.hint,
-    required this.accept,
+    String? selectedPath,
+    String? filePath,
+    String hint = 'Tap to select a PDF',
+    String? emptyLabel,
+    String accept = 'PDF files only',
+    String? emptySubLabel,
     required this.gradient,
     required this.onTap,
-  });
+    this.icon,
+  })  : selectedPath = selectedPath ?? filePath,
+        hint = emptyLabel ?? hint,
+        accept = emptySubLabel ?? accept;
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +299,7 @@ class FilePickerZone extends StatelessWidget {
               child: Icon(
                 hasFile
                     ? Icons.check_circle_rounded
-                    : Icons.upload_file_rounded,
+                    : (icon ?? Icons.upload_file_rounded),
                 color: hasFile ? Colors.white : AppTheme.textTertiary,
                 size: 26,
               ),
@@ -336,7 +340,6 @@ class ResultCard extends StatelessWidget {
   final String? viewRoute;
   final Map<String, dynamic>? viewExtra;
   final VoidCallback? onShare;
-  final VoidCallback? onView;
 
   const ResultCard({
     super.key,
@@ -347,7 +350,6 @@ class ResultCard extends StatelessWidget {
     this.viewRoute,
     this.viewExtra,
     this.onShare,
-    this.onView,
   });
 
   @override
@@ -397,30 +399,19 @@ class ResultCard extends StatelessWidget {
                       onTap:
                           onShare ??
                           () async {
-                            await SharePlus.instance.share(
-                              ShareParams(files: [XFile(path)]),
-                            );
+                            await Share.shareXFiles([XFile(path)]);
                           },
                       outline: true,
                     ),
                   ),
-                  if (viewRoute != null || onView != null) ...[
+                  if (viewRoute != null) ...[
                     const SizedBox(width: 10),
                     Expanded(
                       child: _btn(
                         icon: Icons.visibility_rounded,
                         label: 'View',
                         onTap: () {
-                          if (onView != null) {
-                            onView!();
-                          } else if (viewRoute != null) {
-                            context.push(
-                              viewRoute!,
-                              extra:
-                                  viewExtra ??
-                                  {'filePath': path, 'title': title},
-                            );
-                          }
+                          // Push to pdf viewer — caller must handle
                         },
                         outline: false,
                       ),
@@ -557,9 +548,7 @@ class SuccessSheet extends StatelessWidget {
                     icon: const Icon(Icons.share_rounded, size: 18),
                     label: const Text('Share'),
                     onPressed: () async {
-                      await SharePlus.instance.share(
-                        ShareParams(files: [XFile(path)]),
-                      );
+                      await Share.shareXFiles([XFile(path)]);
                     },
                   ),
                 ),

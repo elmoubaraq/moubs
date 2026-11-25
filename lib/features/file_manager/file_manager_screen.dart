@@ -7,8 +7,8 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/services/print_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 
@@ -18,66 +18,51 @@ enum SortBy { date, name, size }
 
 enum ViewMode { list, grid }
 
-class FileManagerSortNotifier extends Notifier<SortBy> {
+class _FileManagerSortNotifier extends Notifier<SortBy> {
   @override
   SortBy build() => SortBy.date;
   @override
   set state(SortBy value) => super.state = value;
-  void set(SortBy value) => super.state = value;
 }
 
-class FileManagerFilterNotifier extends Notifier<String?> {
+class _FileManagerFilterNotifier extends Notifier<String?> {
   @override
   String? build() => null;
   @override
   set state(String? value) => super.state = value;
-  void set(String? value) => super.state = value;
 }
 
-class FileManagerViewNotifier extends Notifier<ViewMode> {
+class _FileManagerViewNotifier extends Notifier<ViewMode> {
   @override
   ViewMode build() => ViewMode.list;
   @override
   set state(ViewMode value) => super.state = value;
-  void set(ViewMode value) => super.state = value;
 }
 
-class FileManagerSelectionNotifier extends Notifier<Set<String>> {
+class _FileManagerSelectionNotifier extends Notifier<Set<String>> {
   @override
   Set<String> build() => {};
   @override
   set state(Set<String> value) => super.state = value;
-  void set(Set<String> value) => super.state = value;
 }
 
-class FileManagerSearchNotifier extends Notifier<String> {
+class _FileManagerSearchNotifier extends Notifier<String> {
   @override
   String build() => '';
   @override
   set state(String value) => super.state = value;
-  void set(String value) => super.state = value;
 }
 
 final fileManagerSortProvider =
-    NotifierProvider<FileManagerSortNotifier, SortBy>(
-      FileManagerSortNotifier.new,
-    );
+    NotifierProvider<_FileManagerSortNotifier, SortBy>(_FileManagerSortNotifier.new);
 final fileManagerFilterProvider =
-    NotifierProvider<FileManagerFilterNotifier, String?>(
-      FileManagerFilterNotifier.new,
-    );
+    NotifierProvider<_FileManagerFilterNotifier, String?>(_FileManagerFilterNotifier.new);
 final fileManagerViewProvider =
-    NotifierProvider<FileManagerViewNotifier, ViewMode>(
-      FileManagerViewNotifier.new,
-    );
+    NotifierProvider<_FileManagerViewNotifier, ViewMode>(_FileManagerViewNotifier.new);
 final fileManagerSelectionProvider =
-    NotifierProvider<FileManagerSelectionNotifier, Set<String>>(
-      FileManagerSelectionNotifier.new,
-    );
+    NotifierProvider<_FileManagerSelectionNotifier, Set<String>>(_FileManagerSelectionNotifier.new);
 final fileManagerSearchProvider =
-    NotifierProvider<FileManagerSearchNotifier, String>(
-      FileManagerSearchNotifier.new,
-    );
+    NotifierProvider<_FileManagerSearchNotifier, String>(_FileManagerSearchNotifier.new);
 
 final sortedFilteredDocsProvider = Provider<List<DocumentModel>>((ref) {
   final docs = ref.watch(documentsProvider);
@@ -310,7 +295,7 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemCount: chips.length,
         itemBuilder: (context, i) {
           final chip = chips[i];
@@ -421,7 +406,7 @@ class _FileManagerScreenState extends ConsumerState<FileManagerScreen>
         ],
       ),
     );
-    if (confirmed == true && context.mounted) {
+    if (confirmed == true && mounted) {
       for (final id in selection) {
         ref.read(documentsProvider.notifier).deleteDocument(id);
       }
@@ -552,8 +537,8 @@ class _ListView extends StatelessWidget {
             children: [
               tile,
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                child: Center(child: BannerAdWidget()),
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: NativeAdWidget(),
               ),
             ],
           );
@@ -599,10 +584,12 @@ class _GridView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+      ),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: Responsive.fileGridColumns(context),
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 0.85,
@@ -992,32 +979,8 @@ class _DocOptionsSheet extends StatelessWidget {
           }),
           _option(context, Icons.share_rounded, 'Share', () async {
             Navigator.pop(context);
-            await SharePlus.instance.share(
-              ShareParams(files: [XFile(doc.filePath)], subject: doc.name),
-            );
+            await Share.shareXFiles([XFile(doc.filePath)]);
           }),
-          _option(
-            context,
-            Icons.drive_file_rename_outline_rounded,
-            'Rename',
-            () {
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.pop(context);
-              _showRenameDialog(context, messenger);
-            },
-          ),
-          if (doc.filePath.toLowerCase().endsWith('.pdf'))
-            _option(context, Icons.print_rounded, 'Print', () async {
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.pop(context);
-              final error = await PrintService.printFile(
-                doc.filePath,
-                doc.name,
-              );
-              if (error != null) {
-                messenger.showSnackBar(SnackBar(content: Text(error)));
-              }
-            }),
           _option(
             context,
             Icons.star_border_rounded,
@@ -1033,24 +996,6 @@ class _DocOptionsSheet extends StatelessWidget {
           }, isDestructive: true),
           const SizedBox(height: 16),
         ],
-      ),
-    );
-  }
-
-  void _showRenameDialog(
-    BuildContext context,
-    ScaffoldMessengerState messenger,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => _RenameDialog(
-        initialName: doc.name,
-        onRename: (name) async {
-          await ref
-              .read(documentsProvider.notifier)
-              .renameDocument(doc.id, name);
-          messenger.showSnackBar(SnackBar(content: Text('Renamed to "$name"')));
-        },
       ),
     );
   }
@@ -1080,76 +1025,6 @@ class _DocOptionsSheet extends StatelessWidget {
         HapticFeedback.lightImpact();
         onTap();
       },
-    );
-  }
-}
-
-// ── Rename Dialog ─────────────────────────────────────────────────────────────
-class _RenameDialog extends StatefulWidget {
-  final String initialName;
-  final Future<void> Function(String name) onRename;
-
-  const _RenameDialog({required this.initialName, required this.onRename});
-
-  @override
-  State<_RenameDialog> createState() => _RenameDialogState();
-}
-
-class _RenameDialogState extends State<_RenameDialog> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    final name = widget.initialName;
-    _ctrl = TextEditingController(text: name);
-    // Pre-select the name without its extension.
-    final dot = name.toLowerCase().endsWith('.pdf')
-        ? name.length - 4
-        : name.length;
-    _ctrl.selection = TextSelection(baseOffset: 0, extentOffset: dot);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  bool get _valid {
-    final t = _ctrl.text.trim();
-    return t.isNotEmpty && t != widget.initialName;
-  }
-
-  Future<void> _submit() async {
-    if (!_valid) return;
-    final name = _ctrl.text.trim();
-    Navigator.pop(context);
-    await widget.onRename(name);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Rename'),
-      content: TextField(
-        controller: _ctrl,
-        autofocus: true,
-        textInputAction: TextInputAction.done,
-        onChanged: (_) => setState(() {}),
-        onSubmitted: (_) => _submit(),
-        decoration: const InputDecoration(hintText: 'Document name'),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: _valid ? _submit : null,
-          child: const Text('Rename'),
-        ),
-      ],
     );
   }
 }

@@ -6,10 +6,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_picker_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -22,7 +23,8 @@ class SplitPdfScreen extends ConsumerStatefulWidget {
 
 class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
   String? _filePath;
-  final _rangesCtrl = TextEditingController(text: '1-3, 4-6');
+  int? _pageCount;
+  final _rangesCtrl = TextEditingController(text: '1-2, 3-4');
   bool _isProcessing = false;
   List<DocumentModel> _results = [];
   String? _rangeError;
@@ -40,54 +42,64 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final path = await AppFilePicker.pickPdfFile(
+      context,
+      ref: ref,
+      title: 'Select PDF to Split',
     );
-    if (result == null || result.files.isEmpty) return;
-    final path = result.files.first.path;
     if (path == null) return;
+
+    final count = await ref.read(pdfServiceProvider).getPageCount(path) ?? 1;
+
     setState(() {
       _filePath = path;
+      _pageCount = count;
       _results = [];
       _rangeError = null;
+
+      if (count <= 1) {
+        _rangesCtrl.text = '1';
+      } else if (count == 2) {
+        _rangesCtrl.text = '1, 2';
+      } else if (count == 3) {
+        _rangesCtrl.text = '1, 2-3';
+      } else {
+        final mid = count ~/ 2;
+        _rangesCtrl.text = '1-$mid, ${mid + 1}-$count';
+      }
     });
   }
 
-  /// Parses "1-3, 4-6, 7" → [[1,3],[4,6],[7,7]]
-  List<String>? _parseRanges(String input) {
-    final parts = input
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    if (parts.isEmpty) return null;
-
-    for (final part in parts) {
-      if (part.contains('-')) {
-        final halves = part.split('-');
-        if (halves.length != 2) return null;
+  bool _isValidRanges(List<String> parts) {
+    if (parts.isEmpty) return false;
+    for (final p in parts) {
+      if (p.contains('-')) {
+        final halves = p.split('-');
+        if (halves.length != 2) return false;
         final start = int.tryParse(halves[0].trim());
         final end = int.tryParse(halves[1].trim());
         if (start == null || end == null || start < 1 || end < start) {
-          return null;
+          return false;
         }
       } else {
-        final page = int.tryParse(part);
-        if (page == null || page < 1) return null;
+        final page = int.tryParse(p);
+        if (page == null || page < 1) return false;
       }
     }
-    return parts;
+    return true;
   }
 
   Future<void> _split() async {
     if (_filePath == null) return;
 
     final rangeInput = _rangesCtrl.text.trim();
-    final ranges = _parseRanges(rangeInput);
+    final parts = rangeInput
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
 
-    if (ranges == null) {
+    if (!_isValidRanges(parts)) {
       setState(() {
         _rangeError = 'Invalid format. Use "1-3, 4-6, 7" (1-indexed pages).';
       });
@@ -102,7 +114,7 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
     try {
       final results = await ref
           .read(pdfServiceProvider)
-          .splitPdf(inputPath: _filePath!, pageRanges: ranges);
+          .splitPdf(inputPath: _filePath!, pageRanges: parts);
 
       final docs = <DocumentModel>[];
       final errors = <String>[];
@@ -113,8 +125,10 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
           continue;
         }
         final path = res.outputPath!;
-        final rangeStr = i < ranges.length ? ranges[i] : '${i + 1}';
-        final name = 'split_pages_$rangeStr';
+        final range = parts[i];
+        final name = range.contains('-')
+            ? 'split_pages_$range'
+            : 'split_page_$range';
         final size =
             res.fileSizeBytes ??
             (File(path).existsSync() ? File(path).lengthSync() : 0);
@@ -132,26 +146,26 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
         await ref.read(documentsProvider.notifier).addDocument(doc);
       }
 
-      await ref.read(adServiceProvider).showInterstitialAfterTask();
+      if (docs.isEmpty) {
+        throw Exception(
+          errors.isNotEmpty ? errors.first : 'No pages could be extracted from specified ranges.',
+        );
+      }
+
+      try {
+        await ref.read(adServiceProvider).showInterstitialAfterTask();
+      } catch (_) {}
 
       if (!mounted) return;
       setState(() {
         _isProcessing = false;
         _results = docs;
       });
-      if (errors.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errors.join('\n')),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
 
       HapticFeedback.mediumImpact();
     } catch (e) {
-      if (!mounted) return;
       setState(() => _isProcessing = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Split failed: $e'),
@@ -181,7 +195,9 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
                 icon: Icons.content_cut_rounded,
                 title: 'Split PDF',
                 subtitle: _results.isEmpty
-                    ? 'Extract page ranges'
+                    ? (_pageCount != null
+                        ? '$_pageCount page${_pageCount == 1 ? '' : 's'} in document'
+                        : 'Extract page ranges')
                     : '${_results.length} file${_results.length == 1 ? '' : 's'} created',
               ),
               SliverPadding(
@@ -197,14 +213,17 @@ class _SplitPdfScreenState extends ConsumerState<SplitPdfScreen> {
 
                       // File picker
                       FilePickerZone(
-                        selectedPath: _filePath,
-                        hint: 'Tap to select a PDF',
-                        accept: 'PDF files only',
-                        gradient: _gradient,
+                        filePath: _filePath,
                         onTap: _pickFile,
+                        gradient: _gradient,
+                        icon: Icons.picture_as_pdf_rounded,
+                        emptyLabel: 'Tap to select a PDF',
+                        emptySubLabel: 'Device or Google Drive',
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      const NativeAdWidget(maxHeight: 110),
+                      const SizedBox(height: 12),
 
                       // Page ranges field
                       _SectionLabel('Page Ranges'),
@@ -273,11 +292,9 @@ class _InfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFB91C1C).withValues(alpha: 0.12),
+        color: const Color(0xFFB91C1C).withOpacity(0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFB91C1C).withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: const Color(0xFFB91C1C).withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -287,12 +304,12 @@ class _InfoCard extends StatelessWidget {
             size: 18,
           ),
           const SizedBox(width: 10),
-          Expanded(
+          const Expanded(
             child: Text(
               'Enter page ranges separated by commas. '
               'Example: 1-3, 4-6, 7 creates 3 separate files.',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Colors.white70,
                 fontSize: 13,
                 height: 1.4,
               ),
@@ -312,8 +329,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onSurface,
+      style: const TextStyle(
+        color: Colors.white,
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
@@ -336,39 +353,35 @@ class _RangeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
       onChanged: onChanged,
-      style: TextStyle(color: AppTheme.textColor(isDark), fontSize: 15),
+      style: const TextStyle(color: Colors.white, fontSize: 15),
       decoration: InputDecoration(
         hintText: '1-3, 4-6, 7',
-        hintStyle: TextStyle(color: AppTheme.textSecondaryColor(isDark)),
+        hintStyle: TextStyle(color: AppTheme.textSecondary),
         helperText: 'Use commas to separate ranges (e.g. 1-3, 4-6, 7)',
-        helperStyle: TextStyle(
-          color: AppTheme.textSecondaryColor(isDark),
-          fontSize: 12,
-        ),
+        helperStyle: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         errorText: errorText,
         errorStyle: const TextStyle(color: Color(0xFFDB2777)),
         prefixIcon: Icon(
           Icons.numbers_rounded,
-          color: AppTheme.textSecondaryColor(isDark),
+          color: AppTheme.textSecondary,
           size: 20,
         ),
         filled: true,
-        fillColor: AppTheme.cardColor(isDark),
+        fillColor: AppTheme.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -402,14 +415,13 @@ class _ResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor(isDark),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderColor(isDark)),
+        border: Border.all(color: Colors.white.withOpacity(0.07)),
       ),
       child: Row(
         children: [
@@ -439,10 +451,10 @@ class _ResultTile extends StatelessWidget {
               children: [
                 Text(
                   doc.name,
-                  style: TextStyle(
-                    color: AppTheme.textColor(isDark),
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -450,10 +462,7 @@ class _ResultTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   sizeLabel,
-                  style: TextStyle(
-                    color: AppTheme.textSecondaryColor(isDark),
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -461,20 +470,17 @@ class _ResultTile extends StatelessWidget {
           const SizedBox(width: 8),
           // Share button
           GestureDetector(
-            onTap: () => SharePlus.instance.share(
-              ShareParams(files: [XFile(doc.filePath)], subject: doc.name),
-            ),
+            onTap: () =>
+                Share.shareXFiles([XFile(doc.filePath)], subject: doc.name),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: Colors.white.withOpacity(0.07),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.share_rounded,
-                color: AppTheme.textSecondaryColor(isDark),
+                color: AppTheme.textSecondary,
                 size: 18,
               ),
             ),

@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -59,25 +60,15 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
     setState(() => _processing = true);
     try {
       final result = await ref.read(ocrServiceProvider).recognizeText(path);
-      result.when(
-        success: (data) {
-          setState(() {
-            _confidence = data.confidence;
-            _textCtrl.text = data.text;
-            _step = 2;
-          });
-        },
-        failure: (error) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('OCR failed: $error'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-      );
+      if (!result.isSuccess || result.data == null) {
+        throw Exception(result.error ?? 'No text recognized');
+      }
+      final data = result.data!;
+      setState(() {
+        _confidence = data.confidence;
+        _textCtrl.text = data.text;
+        _step = 2;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,7 +93,7 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
           .read(pdfServiceProvider)
           .createPdfFromText(text: text, fileName: name);
       if (!result.isSuccess || result.outputPath == null) {
-        throw Exception(result.error ?? 'Failed to export PDF');
+        throw Exception(result.error ?? 'Export failed');
       }
       final filePath = result.outputPath!;
       final doc = DocumentModel(
@@ -112,9 +103,8 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
         type: DocumentType.ocrResult,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(filePath).existsSync()
-            ? File(filePath).lengthSync()
-            : 0,
+        fileSizeBytes: result.fileSizeBytes ??
+            (File(filePath).existsSync() ? File(filePath).lengthSync() : 0),
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
       if (mounted) {
@@ -148,7 +138,7 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
   }
 
   Future<void> _shareText() async {
-    await SharePlus.instance.share(ShareParams(text: _textCtrl.text));
+    await Share.share(_textCtrl.text);
   }
 
   void _reset() {
@@ -189,6 +179,8 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
                       const SizedBox(height: 16),
                       _buildResultStep(),
                     ],
+                    const SizedBox(height: 16),
+                    const NativeAdWidget(maxHeight: 110),
                   ]),
                 ),
               ),
@@ -245,8 +237,8 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Image.asset(
-            _imagePath!,
+          Image.file(
+            File(_imagePath!),
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
@@ -298,9 +290,7 @@ class _OcrScreenState extends ConsumerState<OcrScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
             ),
           ),
           child: TextField(
@@ -425,9 +415,9 @@ class _ConfidenceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

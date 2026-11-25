@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 import '../../core/widgets/ad_widgets.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -22,8 +23,10 @@ class SettingsScreen extends ConsumerWidget {
           SliverAppBar.large(title: const Text('Settings')),
 
           SliverToBoxAdapter(
-            child: Column(
-              children: [
+            child: ResponsiveCenter(
+              maxWidth: Responsive.maxToolFormWidth,
+              child: Column(
+                children: [
                 // ── Profile Card ─────────────────────────────────────────
                 _buildProfileCard(context, isDark),
 
@@ -90,7 +93,8 @@ class SettingsScreen extends ConsumerWidget {
                 ),
 
                 const SizedBox(height: 60),
-              ],
+                ],
+              ),
             ),
           ),
         ],

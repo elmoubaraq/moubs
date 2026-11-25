@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_picker_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -54,13 +56,14 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final path = await AppFilePicker.pickPdfFile(
+      context,
+      ref: ref,
+      title: 'Select PDF to Encrypt',
     );
-    if (result == null || result.files.single.path == null) return;
+    if (path == null) return;
     setState(() {
-      _filePath = result.files.single.path;
+      _filePath = path;
     });
   }
 
@@ -108,18 +111,24 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
 
       await ref.read(documentsProvider.notifier).addDocument(doc);
 
+      // Show interstitial or rewarded ad
+      try {
+        await ref.read(adServiceProvider).showInterstitialAfterTask();
+      } catch (_) {}
+
       if (mounted) {
         setState(() => _isProcessing = false);
+        HapticFeedback.mediumImpact();
         showModalBottomSheet(
           context: context,
           isDismissible: false,
-          builder: (_) => SuccessSheet(
+          builder: (sheetCtx) => SuccessSheet(
             title: 'Encryption Complete!',
             subtitle: doc.name,
             path: doc.filePath,
             gradient: _gradient,
             onDone: () {
-              Navigator.pop(context);
+              Navigator.pop(sheetCtx);
               context.pop();
             },
           ),
@@ -130,7 +139,10 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppTheme.error,
+        ));
       }
     }
   }
@@ -147,8 +159,9 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
             key: _formKey,
             child: CustomScrollView(
               slivers: [
-                ToolSliverHeader(
+                const ToolSliverHeader(
                   title: 'Encrypt PDF',
+                  subtitle: 'Protect your PDF with AES-256 encryption',
                   icon: Icons.lock_rounded,
                   gradient: _gradient,
                 ),
@@ -166,13 +179,15 @@ class _EncryptPdfScreenState extends ConsumerState<EncryptPdfScreen> {
 
                       FilePickerZone(
                         selectedPath: _filePath,
-                        hint: 'Select PDF File',
-                        accept: 'PDF files only',
+                        hint: 'Tap to select a PDF',
+                        accept: 'Device or Google Drive',
                         gradient: _gradient,
                         onTap: _pickFile,
                       ).animate().fadeIn(delay: 130.ms).slideY(begin: 0.1),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      const NativeAdWidget(maxHeight: 110),
+                      const SizedBox(height: 12),
 
                       // Password fields
                       _EncryptCard(

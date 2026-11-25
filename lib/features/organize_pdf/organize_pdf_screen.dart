@@ -4,10 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_picker_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -56,11 +57,11 @@ class _OrganizePdfScreenState extends ConsumerState<OrganizePdfScreen> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final path = await AppFilePicker.pickPdfFile(
+      context,
+      ref: ref,
+      title: 'Select PDF to Organize',
     );
-    final path = result?.files.single.path;
     if (path == null) return;
 
     await _thumbSub?.cancel();
@@ -190,7 +191,9 @@ class _OrganizePdfScreenState extends ConsumerState<OrganizePdfScreen> {
       pageCount: kept.length,
     );
     await ref.read(documentsProvider.notifier).addDocument(doc);
-    await ref.read(adServiceProvider).showInterstitialAfterTask();
+    try {
+      await ref.read(adServiceProvider).showInterstitialAfterTask();
+    } catch (_) {}
     if (!mounted) return;
 
     setState(() => _isProcessing = false);
@@ -251,11 +254,14 @@ class _OrganizePdfScreenState extends ConsumerState<OrganizePdfScreen> {
                   child: FilePickerZone(
                     selectedPath: _filePath,
                     hint: 'Tap to select a PDF',
-                    accept: 'PDF files only',
+                    accept: 'Device or Google Drive',
                     gradient: _gradient,
                     onTap: _pickFile,
                   ),
                 ),
+              ),
+              const SliverToBoxAdapter(
+                child: NativeAdWidget(maxHeight: 110),
               ),
               if (_isLoading)
                 const SliverToBoxAdapter(

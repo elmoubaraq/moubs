@@ -3,77 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Evergreen PDF Scanner</title>
+    <title>Privacy Policy - Evergreen PDF Scanner & Converter</title>
     <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --text-main: #1F2937;
+            --text-sub: #4B5563;
+            --bg: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --border: #E5E7EB;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.65;
+            color: var(--text-main);
+            max-width: 840px;
             margin: 0 auto;
             padding: 40px 20px;
-            background-color: #f9f9f9;
+            background-color: var(--bg);
         }
         .container {
-            background-color: #fff;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: var(--card-bg);
+            padding: 48px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
         }
-        h1 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; }
-        h2 { color: #388e3c; margin-top: 30px; }
-        p { margin-bottom: 15px; }
-        .footer { margin-top: 50px; font-size: 0.9em; color: #666; text-align: center; }
-        a { color: #2e7d32; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        .header {
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+        }
+        .badge {
+            display: inline-block;
+            background: #ECFDF5;
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        h1 {
+            color: #111827;
+            font-size: 2.2em;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.02em;
+        }
+        .effective-date {
+            color: var(--text-sub);
+            font-size: 0.95em;
+            margin: 0;
+        }
+        h2 {
+            color: #111827;
+            margin-top: 36px;
+            margin-bottom: 14px;
+            font-size: 1.35em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        p {
+            color: var(--text-sub);
+            margin-bottom: 16px;
+        }
+        ul {
+            color: var(--text-sub);
+            padding-left: 24px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        strong {
+            color: var(--text-main);
+        }
+        .highlight-box {
+            background-color: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            color: #166534;
+        }
+        .highlight-box p {
+            color: #166534;
+            margin: 0;
+            font-size: 0.95em;
+        }
+        a {
+            color: var(--primary-dark);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            font-size: 0.9em;
+            color: #9CA3AF;
+            text-align: center;
+        }
+        @media (max-width: 640px) {
+            body { padding: 16px 12px; }
+            .container { padding: 24px 18px; }
+            h1 { font-size: 1.7em; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Privacy Policy</h1>
-        <p>Last Updated: April 19, 2026</p>
-        
-        <p>This Privacy Policy describes how <strong>Evergreen</strong> ("the App") collects, uses, and shares your information when you use our mobile application and services.</p>
+        <div class="header">
+            <span class="badge">Privacy First</span>
+            <h1>Privacy Policy</h1>
+            <p class="effective-date">Last Updated: November 24, 2026</p>
+        </div>
 
-        <h2>1. Information We Collect</h2>
-        <p>We believe in privacy first. Most documentation processing happens locally on your device.</p>
+        <p>This Privacy Policy explains how <strong>Evergreen</strong> ("we", "our", or "the App"), developed by <strong>Moubs Corps</strong>, handles your information. Our primary principle is simple: <strong>your documents belong to you, and your files stay on your device</strong>.</p>
+
+        <div class="highlight-box">
+            <p><strong>Summary:</strong> Evergreen does not collect, sell, or upload your scanned documents, PDF files, signatures, or photos to private backend servers. All PDF generation, scanning, OCR, signing, encryption, and conversions occur 100% locally on your device.</p>
+        </div>
+
+        <h2>1. Document & File Privacy (100% Local Processing)</h2>
+        <p>Evergreen is engineered as an on-device utility tool:</p>
         <ul>
-            <li><strong>Documents and Images:</strong> Your documents, scans, and images are processed locally on your device. We do not upload your personal documents to our servers unless you explicitly use a cloud-sharing feature.</li>
-            <li><strong>Device Information:</strong> We may collect basic technical information such as device model, OS version, and unique device identifiers to ensure app stability and performance.</li>
-            <li><strong>Usage Data:</strong> We may collect anonymized analytics data regarding how you use the app (e.g., feature usage frequency) to improve the user experience.</li>
+            <li><strong>Documents, Scans, & Images:</strong> When you scan documents, merge files, compress PDFs, extract text, sign contracts, add watermarks, or convert photos, all processing takes place locally on your device's processor and storage.</li>
+            <li><strong>On-Device OCR (Optical Character Recognition):</strong> Text extraction is performed using on-device Google ML Kit models. No images or extracted text are uploaded to remote servers for processing.</li>
+            <li><strong>Signatures:</strong> Any digital signatures you draw or stamp onto documents are saved strictly in your device's private app sandbox. We do not store or transmit your signatures.</li>
+            <li><strong>Google Drive & Cloud Picker:</strong> When you open a file from Google Drive or another storage provider via the system document picker, the file is read only to complete the requested action on your device. We do not obtain continuous background access to your cloud accounts.</li>
         </ul>
 
-        <h2>2. Data Handling and Storage</h2>
-        <p>Your documents are stored in your device's local storage. We recommend using your own cloud storage providers (Google Drive, Dropbox, etc.) for backups, which are governed by their respective privacy policies.</p>
-
-        <h2>3. Third-Party Services</h2>
-        <p>The App may use third-party services that collect information used to identify you:</p>
+        <h2>2. Information We Collect Automatically</h2>
+        <p>We do not collect personal identifiers such as your name, email address, or phone number within the core app. However, to maintain app stability and display ads, certain third-party libraries may process limited technical data:</p>
         <ul>
-            <li><a href="https://www.google.com/policies/privacy/" target="_blank">Google Play Services</a></li>
-            <li><a href="https://support.google.com/admob/answer/6128543?hl=en" target="_blank">AdMob (Google)</a></li>
-            <li><a href="https://firebase.google.com/support/privacy" target="_blank">Firebase Analytics / Crashlytics</a></li>
+            <li><strong>Device & Diagnostics:</strong> Anonymous diagnostic information such as device model, operating system version, screen resolution, app crashes, and performance metrics may be collected to help us resolve bugs.</li>
+            <li><strong>Advertising Identifiers:</strong> Non-personal identifiers (such as Google Advertising ID / GAID) may be processed by Google Mobile Ads to serve relevant or non-personalized advertisements, prevent ad fraud, and generate ad analytics.</li>
         </ul>
 
-        <h2>4. Permissions</h2>
-        <p>The App requires the following permissions to function:</p>
+        <h2>3. Third-Party Services & SDKs</h2>
+        <p>The App uses trusted third-party services that may collect information used to identify your device in accordance with their respective privacy policies:</p>
         <ul>
-            <li><strong>Camera:</strong> To scan documents.</li>
-            <li><strong>Storage:</strong> To save and open PDF files.</li>
-            <li><strong>Internet:</strong> To provide core app updates and optional features.</li>
+            <li><strong>Google Mobile Ads (AdMob):</strong> Used to display banner, interstitial, native, and rewarded ads. For information on how Google uses data from apps using their services, please visit: <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google Advertising Privacy Policy</a>.</li>
+            <li><strong>Google Play Services:</strong> Used to provide core Android APIs and service infrastructure: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
+            <li><strong>Google ML Kit:</strong> Used for on-device machine learning and text recognition: <a href="https://developers.google.com/ml-kit/terms" target="_blank" rel="noopener">ML Kit Terms & Privacy</a>.</li>
         </ul>
 
-        <h2>5. Your Rights</h2>
-        <p>You have the right to access, update, or delete your personal information. Since we store data locally, you can delete all app data by uninstalling the app or clearing the app cache in your device settings.</p>
+        <h2>4. Device Permissions We Request</h2>
+        <p>To provide its core document scanner and PDF utilities, Evergreen requests the following permissions only when required:</p>
+        <ul>
+            <li><strong>Camera (<code>android.permission.CAMERA</code>):</strong> Required only when you use the document scanner or capture ID photos. Camera images are strictly processed in-memory and saved only if you choose to export them.</li>
+            <li><strong>Storage / Media Access:</strong> Required to open documents you choose to import and to save exported PDFs to your device's storage.</li>
+            <li><strong>Internet Access (<code>android.permission.INTERNET</code>):</strong> Required strictly for ad loading (Google AdMob) and checking for network-dependent app updates.</li>
+        </ul>
 
-        <h2>6. Changes to This Privacy Policy</h2>
-        <p>We may update our Privacy Policy from time to time. You are advised to review this page periodically for any changes.</p>
+        <h2>5. Data Retention & Deletion</h2>
+        <p>Because Evergreen does not store your files on external servers, you have total control over your data:</p>
+        <ul>
+            <li>You can delete any saved document, scan, or exported PDF directly within the <strong>Files</strong> tab inside the app.</li>
+            <li>You can use the <strong>Clear All Documents</strong> option in Settings to wipe all locally cached documents at once.</li>
+            <li>Uninstalling the application will remove all application sandbox data from your device.</li>
+        </ul>
 
-        <h2>7. Contact Us</h2>
-        <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at:</p>
-        <p>Email: <a href="mailto:support.evegreen@gmail.com">support.evegreen@gmail.com</a></p>
+        <h2>6. Children's Privacy</h2>
+        <p>Evergreen is a general-purpose productivity utility and does not knowingly collect personal identifiable information from children under the age of 13. If you believe your child has provided us with personal information, please contact us so we can take appropriate measures.</p>
+
+        <h2>7. Changes to This Privacy Policy</h2>
+        <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date. We recommend reviewing this policy periodically.</p>
+
+        <h2>8. Contact Us</h2>
+        <p>If you have any questions, concerns, or requests regarding this Privacy Policy or your privacy while using Evergreen, please contact us at:</p>
+        <p>
+            <strong>Moubs Corps</strong><br>
+            Email: <a href="mailto:support.evergreen@gmail.com">support.evergreen@gmail.com</a>
+        </p>
 
         <div class="footer">
-            <p>&copy; 2026 Evergreen App. All rights reserved.</p>
+            <p>&copy; 2026 Moubs Corps. All rights reserved.</p>
         </div>
     </div>
 </body>

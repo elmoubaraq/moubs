@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/utils/responsive_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -87,7 +89,7 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
           .read(pdfServiceProvider)
           .createPdfFromImages(imagePaths: _images, fileName: name);
       if (!result.isSuccess || result.outputPath == null) {
-        throw Exception(result.error ?? 'Operation failed');
+        throw Exception(result.error ?? 'Failed to create PDF');
       }
       final filePath = result.outputPath!;
       final doc = DocumentModel(
@@ -102,6 +104,9 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
             : 0,
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
+      try {
+        await ref.read(adServiceProvider).showInterstitialAfterTask();
+      } catch (_) {}
       if (mounted) {
         context.go('/');
       }
@@ -152,6 +157,8 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
                       const SizedBox(height: 10),
                       _buildImageGrid(),
                     ],
+                    const SizedBox(height: 16),
+                    const NativeAdWidget(maxHeight: 110),
                   ]),
                 ),
               ),
@@ -283,8 +290,8 @@ class _ImageToPdfScreenState extends ConsumerState<ImageToPdfScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.imageGridColumns(context),
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
         childAspectRatio: 1,
@@ -409,7 +416,7 @@ class _ImageGridItem extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
+              color: Colors.black.withOpacity(0.6),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(

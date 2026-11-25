@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/models/document_model.dart';
@@ -66,13 +67,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: Responsive.horizontalPadding(context),
+            ),
             sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: Responsive.toolGridColumns(context),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.78,
+                childAspectRatio: Responsive.useNavigationRail(context)
+                    ? 0.92
+                    : 0.78,
               ),
               delegate: SliverChildListDelegate(
                 _buildCoreTools(context, isDark),
@@ -86,13 +91,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: Responsive.horizontalPadding(context),
+            ),
             sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: Responsive.toolGridColumns(context),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.78,
+                childAspectRatio: Responsive.useNavigationRail(context)
+                    ? 0.92
+                    : 0.78,
               ),
               delegate: SliverChildListDelegate(
                 _buildAdvancedTools(context, isDark),
@@ -100,11 +109,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ),
 
-          // ── Ad Banner ────────────────────────────────────────────────────
+          // ── Native Ad ────────────────────────────────────────────────────
           const SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Center(child: BannerAdWidget()),
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: NativeAdWidget(),
             ),
           ),
 
@@ -522,10 +531,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   List<Widget> _buildAdvancedTools(BuildContext context, bool isDark) {
     const tools = [
-      _Tool('Organize\nPages', Icons.view_agenda_rounded, '/organize-pdf', 12),
       _Tool('Watermark', Icons.water_drop_rounded, '/watermark-pdf', 8),
       _Tool('Encrypt\nPDF', Icons.lock_rounded, '/encrypt-pdf', 9),
-      _Tool('Unlock\nPDF', Icons.lock_open_rounded, '/unlock-pdf', 13),
       _Tool('PDF to\nImage', Icons.photo_library_rounded, '/pdf-to-image', 10),
       _Tool('ID\nPhoto', Icons.badge_rounded, '/id-photo', 11),
     ];
@@ -929,13 +936,6 @@ class _QuickActionsSheet extends StatelessWidget {
       Icons.merge_rounded,
       '/merge-pdf',
       2,
-    ),
-    _QAction(
-      'Organize Pages',
-      'Reorder, rotate & remove pages',
-      Icons.view_agenda_rounded,
-      '/organize-pdf',
-      12,
     ),
     _QAction(
       'Extract Text (OCR)',

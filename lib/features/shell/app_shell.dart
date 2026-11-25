@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 
-/// Premium App Shell with frosted glass bottom navigation
+/// Premium App Shell with adaptive NavigationRail on tablets/foldables
+/// and frosted glass bottom navigation on phones.
 class AppShell extends StatelessWidget {
   final Widget child;
 
@@ -34,6 +36,91 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedIndex = _selectedIndex(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final useRail = Responsive.useNavigationRail(context);
+    final isExpanded = Responsive.isExpanded(context);
+
+    if (useRail) {
+      final activeColor = isDark ? AppTheme.primaryLight : AppTheme.primary;
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (i) => _onTap(context, i),
+              extended: isExpanded,
+              minExtendedWidth: 200,
+              backgroundColor: isDark ? AppTheme.cardDark : AppTheme.cardLight,
+              indicatorColor: activeColor.withValues(alpha: 0.14),
+              selectedIconTheme: IconThemeData(color: activeColor),
+              selectedLabelTextStyle: TextStyle(
+                color: activeColor,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'PlusJakartaSans',
+              ),
+              unselectedLabelTextStyle: TextStyle(
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+                fontFamily: 'PlusJakartaSans',
+              ),
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    if (isExpanded) ...[
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Evergreen',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: Text('Home'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.folder_outlined),
+                  selectedIcon: Icon(Icons.folder_rounded),
+                  label: Text('Files'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings_rounded),
+                  label: Text('Settings'),
+                ),
+              ],
+            ),
+            VerticalDivider(
+              thickness: 1,
+              width: 1,
+              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+            ),
+            Expanded(child: child),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       body: child,

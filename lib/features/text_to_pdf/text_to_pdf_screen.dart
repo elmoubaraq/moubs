@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -67,7 +68,7 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
           .read(pdfServiceProvider)
           .createPdfFromText(text: text, fileName: name, fontSize: _fontSize);
       if (!result.isSuccess || result.outputPath == null) {
-        throw Exception(result.error ?? 'Operation failed');
+        throw Exception(result.error ?? 'Failed to create PDF');
       }
       final filePath = result.outputPath!;
       final doc = DocumentModel(
@@ -77,11 +78,13 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
         type: DocumentType.textPdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(filePath).existsSync()
-            ? File(filePath).lengthSync()
-            : 0,
+        fileSizeBytes: result.fileSizeBytes ??
+            (File(filePath).existsSync() ? File(filePath).lengthSync() : 0),
       );
       await ref.read(documentsProvider.notifier).addDocument(doc);
+      try {
+        await ref.read(adServiceProvider).showInterstitialAfterTask();
+      } catch (_) {}
       if (mounted) {
         context.push(
           '/pdf-viewer',
@@ -141,6 +144,8 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
                         ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    const NativeAdWidget(maxHeight: 110),
                     const SizedBox(height: 24),
                   ]),
                 ),
@@ -148,10 +153,12 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
             ],
           ),
           bottomNavigationBar: BottomActionBar(
-            label: 'Generate PDF',
+            primaryLabel: 'Generate PDF',
             gradient: _gradient,
-            onPressed: _generatePdf,
-            icon: Icons.picture_as_pdf_rounded,
+            primaryIcon: Icons.picture_as_pdf_rounded,
+            enabled: !_processing,
+            isLoading: _processing,
+            onPrimary: _generatePdf,
           ),
         ),
         if (_processing) const ProcessingOverlay(),
@@ -190,11 +197,9 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF047857).withValues(alpha: 0.06),
+        color: const Color(0xFF047857).withOpacity(0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFF047857).withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: const Color(0xFF047857).withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,9 +249,7 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outline.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
               ),
             ),
             child: Text(
@@ -275,13 +278,11 @@ class _TextToPdfScreenState extends ConsumerState<TextToPdfScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: Colors.black.withOpacity(0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),

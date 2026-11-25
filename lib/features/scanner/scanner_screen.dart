@@ -50,7 +50,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       final images =
           await CunningDocumentScanner.getPictures(
             noOfPages: 50,
-            scannerSource: ScannerSource.cameraAndGallery,
+            isGalleryImportAllowed: true,
           ) ??
           [];
       if (mounted && images.isNotEmpty) {

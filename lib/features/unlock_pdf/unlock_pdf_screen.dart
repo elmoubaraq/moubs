@@ -3,10 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_picker_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -34,11 +35,11 @@ class _UnlockPdfScreenState extends ConsumerState<UnlockPdfScreen> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final path = await AppFilePicker.pickPdfFile(
+      context,
+      ref: ref,
+      title: 'Select Protected PDF to Unlock',
     );
-    final path = result?.files.single.path;
     if (path == null) return;
     setState(() {
       _filePath = path;
@@ -95,7 +96,9 @@ class _UnlockPdfScreenState extends ConsumerState<UnlockPdfScreen> {
       fileSizeBytes: result.fileSizeBytes ?? 0,
     );
     await ref.read(documentsProvider.notifier).addDocument(doc);
-    await ref.read(adServiceProvider).showInterstitialAfterTask();
+    try {
+      await ref.read(adServiceProvider).showInterstitialAfterTask();
+    } catch (_) {}
     if (!mounted) return;
 
     setState(() => _isProcessing = false);
@@ -150,10 +153,12 @@ class _UnlockPdfScreenState extends ConsumerState<UnlockPdfScreen> {
                     FilePickerZone(
                       selectedPath: _filePath,
                       hint: 'Select a protected PDF',
-                      accept: 'PDF files only',
+                      accept: 'Device or Google Drive',
                       gradient: _gradient,
                       onTap: _pickFile,
                     ).animate().fadeIn(delay: 80.ms).slideY(begin: 0.1),
+                    const SizedBox(height: 12),
+                    const NativeAdWidget(maxHeight: 110),
                     if (_isProtected == false) ...[
                       const SizedBox(height: 12),
                       const _InfoBanner(

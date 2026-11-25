@@ -11,6 +11,7 @@ class AdService {
 
   BannerAd? _bannerAd;
   InterstitialAd? _interstitialAd;
+  RewardedAd? _rewardedAd;
   RewardedInterstitialAd? _rewardedInterstitialAd;
   bool _isInitialized = false;
   int _taskCompletionCount = 0;
@@ -19,10 +20,15 @@ class AdService {
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    await MobileAds.instance.initialize();
-    _isInitialized = true;
-    _preloadInterstitial();
-    _preloadRewardedInterstitial();
+    try {
+      await MobileAds.instance.initialize();
+      _isInitialized = true;
+      _preloadInterstitial();
+      _preloadRewarded();
+      _preloadRewardedInterstitial();
+    } catch (e) {
+      debugPrint('AdService initialization failed: $e');
+    }
   }
 
   // ---- Banner Ad ----
@@ -76,18 +82,62 @@ class AdService {
   }
 
   Future<bool> showInterstitialAfterTask() async {
-    _taskCompletionCount++;
-    if (_taskCompletionCount % 3 != 0) return false;
-    return showInterstitial();
+    try {
+      _taskCompletionCount++;
+      if (_taskCompletionCount % 3 != 0) return false;
+      return await showInterstitial().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> showInterstitial() async {
-    if (_interstitialAd == null) return false;
-    await _interstitialAd!.show();
-    return true;
+    try {
+      if (_interstitialAd != null) {
+        await _interstitialAd!.show();
+        return true;
+      }
+      if (_rewardedInterstitialAd != null) {
+        await _rewardedInterstitialAd!.show(onUserEarnedReward: (_, __) {});
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
-  // ---- Rewarded Interstitial ----
+  // ---- Standard Rewarded Ad ----
+  void _preloadRewarded() {
+    RewardedAd.load(
+      adUnitId: AdConstants.activeRewardedId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _rewardedAd = ad;
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _rewardedAd = null;
+              _preloadRewarded();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _rewardedAd = null;
+              _preloadRewarded();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('Rewarded ad failed to load: ${error.message}');
+          Future.delayed(const Duration(seconds: 30), _preloadRewarded);
+        },
+      ),
+    );
+  }
+
+  // ---- Rewarded Interstitial Ad ----
   void _preloadRewardedInterstitial() {
     RewardedInterstitialAd.load(
       adUnitId: AdConstants.activeRewardedInterstitialId,
@@ -119,20 +169,83 @@ class AdService {
     );
   }
 
+  /// Show a rewarded ad (either standard rewarded or rewarded interstitial).
+  /// Calls [onRewarded] when the user earns the reward.
+  Future<bool> showRewardedAd({
+    required Function(RewardItem reward) onRewarded,
+    VoidCallback? onDismissed,
+  }) async {
+    // 1. Try standard RewardedAd
+    if (_rewardedAd != null) {
+      final ad = _rewardedAd!;
+      ad.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _rewardedAd = null;
+          _preloadRewarded();
+          onDismissed?.call();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _rewardedAd = null;
+          _preloadRewarded();
+          onDismissed?.call();
+        },
+      );
+      await ad.show(
+        onUserEarnedReward: (ad, reward) => onRewarded(reward),
+      );
+      return true;
+    }
+
+    // 2. Try RewardedInterstitialAd
+    if (_rewardedInterstitialAd != null) {
+      final ad = _rewardedInterstitialAd!;
+      ad.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _rewardedInterstitialAd = null;
+          _preloadRewardedInterstitial();
+          onDismissed?.call();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _rewardedInterstitialAd = null;
+          _preloadRewardedInterstitial();
+          onDismissed?.call();
+        },
+      );
+      await ad.show(
+        onUserEarnedReward: (ad, reward) => onRewarded(reward),
+      );
+      return true;
+    }
+
+    // 3. Fallback: Show interstitial if available so user is rewarded
+    if (_interstitialAd != null) {
+      await showInterstitial();
+      onRewarded(RewardItem(1, 'fallback_reward'));
+      onDismissed?.call();
+      return true;
+    }
+
+    // If no ad is ready yet, grant reward so user flow is not broken
+    onRewarded(RewardItem(1, 'immediate_reward'));
+    onDismissed?.call();
+    return false;
+  }
+
   Future<bool> showRewardedInterstitial({
     required Function(RewardItem reward) onRewarded,
   }) async {
-    if (_rewardedInterstitialAd == null) return false;
-    await _rewardedInterstitialAd!.show(
-      onUserEarnedReward: (ad, reward) => onRewarded(reward),
-    );
-    return true;
+    return showRewardedAd(onRewarded: onRewarded);
   }
 
   // ---- Native Ad ----
   NativeAd createNativeAd({
     required Function(NativeAd) onLoaded,
     VoidCallback? onFailed,
+    bool isDark = true,
   }) {
     return NativeAd(
       adUnitId: AdConstants.activeNativeId,
@@ -147,12 +260,20 @@ class AdService {
       ),
       nativeTemplateStyle: NativeTemplateStyle(
         templateType: TemplateType.small,
-        mainBackgroundColor: Colors.white,
-        cornerRadius: 12,
+        mainBackgroundColor: isDark ? const Color(0xFF111827) : Colors.white,
+        cornerRadius: 16,
         callToActionTextStyle: NativeTemplateTextStyle(
           textColor: Colors.white,
-          backgroundColor: const Color(0xFF2E7D32),
+          backgroundColor: const Color(0xFF059669),
           size: 14,
+        ),
+        primaryTextStyle: NativeTemplateTextStyle(
+          textColor: isDark ? Colors.white : const Color(0xFF111827),
+          size: 14,
+        ),
+        secondaryTextStyle: NativeTemplateTextStyle(
+          textColor: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+          size: 12,
         ),
       ),
     )..load();
@@ -161,6 +282,7 @@ class AdService {
   void dispose() {
     _bannerAd?.dispose();
     _interstitialAd?.dispose();
+    _rewardedAd?.dispose();
     _rewardedInterstitialAd?.dispose();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../providers/app_providers.dart';
+import '../theme/app_theme.dart';
 
 /// Banner ad widget that respects premium status
 class BannerAdWidget extends ConsumerStatefulWidget {
@@ -44,7 +45,8 @@ class _BannerAdWidgetState extends ConsumerState<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isLoaded || _bannerAd == null) {
+    final isPremium = ref.watch(isPremiumProvider);
+    if (isPremium || !_isLoaded || _bannerAd == null) {
       return const SizedBox.shrink();
     }
 
@@ -57,9 +59,10 @@ class _BannerAdWidgetState extends ConsumerState<BannerAdWidget> {
   }
 }
 
-/// Native ad widget for file lists
+/// Native ad widget for file lists and home screen
 class NativeAdWidget extends ConsumerStatefulWidget {
-  const NativeAdWidget({super.key});
+  final double maxHeight;
+  const NativeAdWidget({super.key, this.maxHeight = 110});
 
   @override
   ConsumerState<NativeAdWidget> createState() => _NativeAdWidgetState();
@@ -70,14 +73,18 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
   bool _isLoaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadAd();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_nativeAd == null) {
+      _loadAd();
+    }
   }
 
   void _loadAd() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final adService = ref.read(adServiceProvider);
     _nativeAd = adService.createNativeAd(
+      isDark: isDark,
       onLoaded: (ad) {
         if (mounted) setState(() => _isLoaded = true);
       },
@@ -95,18 +102,28 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isLoaded || _nativeAd == null) {
+    final isPremium = ref.watch(isPremiumProvider);
+    if (isPremium || !_isLoaded || _nativeAd == null) {
       return const SizedBox.shrink();
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      constraints: const BoxConstraints(
+      constraints: BoxConstraints(
         minWidth: 320,
-        minHeight: 90,
-        maxHeight: 120,
+        minHeight: 80,
+        maxHeight: widget.maxHeight,
       ),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(isDark),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.borderColor(isDark),
+          width: 1,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: AdWidget(ad: _nativeAd!),
     );

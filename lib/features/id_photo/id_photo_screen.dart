@@ -1,11 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
+import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/services/image_service.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -49,7 +55,7 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
     ),
     IdPhotoType.driverLicense: (
       label: 'Driver\'s License',
-      dims: '35 × 45 mm  •  413 × 531 px',
+      dims: '25 × 31 mm  •  295 × 366 px',
       icon: Icons.drive_eta_rounded,
     ),
   };
@@ -88,19 +94,28 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
             _croppedPath = result.outputPath;
             _isProcessing = false;
           });
+
+          // Show interstitial or rewarded ad after completing
+          await ref.read(adServiceProvider).showInterstitialAfterTask();
         } else {
           setState(() => _isProcessing = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.error ?? 'Crop failed')),
+            SnackBar(
+              content: Text(result.error ?? 'Crop failed'),
+              backgroundColor: AppTheme.error,
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Crop failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Crop failed: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
       }
     }
   }
@@ -108,29 +123,41 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
   Future<void> _sharePhoto() async {
     final path = _croppedPath ?? _originalPath;
     if (path == null) return;
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(path)], text: 'ID Photo'),
-    );
+    await Share.shareXFiles([XFile(path)], text: 'ID Photo');
   }
 
-  Future<void> _saveToGallery() async {
+  Future<void> _saveToDocuments() async {
     final path = _croppedPath ?? _originalPath;
     if (path == null) return;
-    // Share the file as an alternative to saving directly to gallery.
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(path)], text: 'ID Photo'),
+
+    final file = File(path);
+    final doc = DocumentModel(
+      id: const Uuid().v4(),
+      name: 'ID_Photo_${_typeInfo[_selectedType]!.label}',
+      filePath: path,
+      type: DocumentType.idPhoto,
+      createdAt: DateTime.now(),
+      modifiedAt: DateTime.now(),
+      fileSizeBytes: file.existsSync() ? file.lengthSync() : 0,
+      pageCount: 1,
     );
+
+    await ref.read(documentsProvider.notifier).addDocument(doc);
+
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Saved! Check your gallery'),
-            ],
-          ),
-          backgroundColor: Color(0xFF22C55E),
+      HapticFeedback.mediumImpact();
+      showModalBottomSheet(
+        context: context,
+        isDismissible: false,
+        builder: (sheetCtx) => SuccessSheet(
+          title: 'ID Photo Saved!',
+          subtitle: '${_typeInfo[_selectedType]!.label} format',
+          path: path,
+          gradient: _gradient,
+          onDone: () {
+            Navigator.pop(sheetCtx);
+            context.pop();
+          },
         ),
       );
     }
@@ -139,6 +166,7 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
   @override
   Widget build(BuildContext context) {
     final info = _typeInfo[_selectedType]!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Stack(
       children: [
@@ -161,10 +189,10 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Photo Format',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textColor(isDark),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -189,17 +217,16 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: selected
-                                        ? const Color(
-                                            0xFFDC2626,
-                                          ).withValues(alpha: 0.2)
-                                        : Colors.white.withValues(alpha: 0.06),
+                                        ? const Color(0xFFDC2626)
+                                            .withValues(alpha: isDark ? 0.25 : 0.12)
+                                        : (isDark
+                                            ? Colors.white.withValues(alpha: 0.06)
+                                            : Colors.black.withValues(alpha: 0.04)),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: selected
                                           ? const Color(0xFFDC2626)
-                                          : Colors.white.withValues(
-                                              alpha: 0.12,
-                                            ),
+                                          : AppTheme.borderColor(isDark),
                                       width: selected ? 1.5 : 1,
                                     ),
                                   ),
@@ -211,18 +238,18 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
                                         size: 16,
                                         color: selected
                                             ? const Color(0xFFEF4444)
-                                            : Colors.white54,
+                                            : AppTheme.textSecondaryColor(isDark),
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
                                         t.label,
                                         style: TextStyle(
                                           color: selected
-                                              ? Colors.white
-                                              : Colors.white60,
+                                              ? (isDark ? Colors.white : const Color(0xFFDC2626))
+                                              : AppTheme.textColor(isDark),
                                           fontSize: 13,
                                           fontWeight: selected
-                                              ? FontWeight.w600
+                                              ? FontWeight.w700
                                               : FontWeight.normal,
                                         ),
                                       ),
@@ -252,10 +279,10 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Select Source',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textColor(isDark),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -317,10 +344,10 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
                                 onTap: _sharePhoto,
                               ),
                               _ActionButton(
-                                icon: Icons.download_rounded,
-                                label: 'Save to Gallery',
+                                icon: Icons.save_rounded,
+                                label: 'Save to Files',
                                 gradient: _gradient,
-                                onTap: _saveToGallery,
+                                onTap: _saveToDocuments,
                               ),
                             ],
                           )
@@ -328,6 +355,8 @@ class _IdPhotoScreenState extends ConsumerState<IdPhotoScreen> {
                           .fadeIn(delay: 50.ms)
                           .scale(begin: const Offset(0.95, 0.95)),
                     ],
+                    const SizedBox(height: 16),
+                    const NativeAdWidget(maxHeight: 110),
                   ]),
                 ),
               ),
@@ -366,10 +395,12 @@ class _DimensionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFDC2626).withValues(alpha: 0.12),
+        color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.15 : 0.08),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: const Color(0xFFDC2626).withValues(alpha: 0.35),
@@ -391,8 +422,8 @@ class _DimensionsCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.textColor(isDark),
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                 ),
@@ -401,7 +432,7 @@ class _DimensionsCard extends StatelessWidget {
               Text(
                 dims,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: AppTheme.textSecondaryColor(isDark),
                   fontSize: 12,
                 ),
               ),
@@ -421,12 +452,14 @@ class _IdCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2332),
+        color: AppTheme.cardColor(isDark),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppTheme.borderColor(isDark)),
       ),
       child: child,
     );
@@ -448,14 +481,18 @@ class _SourceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: AppTheme.borderColor(isDark)),
         ),
         child: Column(
           children: [
@@ -463,10 +500,10 @@ class _SourceButton extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.textColor(isDark),
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -493,6 +530,8 @@ class _PhotoPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -500,8 +539,8 @@ class _PhotoPreviewSection extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.textColor(isDark),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -509,7 +548,8 @@ class _PhotoPreviewSection extends StatelessWidget {
             if (badge != null) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFDC2626), Color(0xFFB91C1C)],
@@ -538,8 +578,10 @@ class _PhotoPreviewSection extends StatelessWidget {
             child: Image.file(
               File(imagePath),
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                color: Colors.white.withValues(alpha: 0.05),
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.05),
                 child: const Center(
                   child: Icon(
                     Icons.broken_image_rounded,
@@ -554,9 +596,10 @@ class _PhotoPreviewSection extends StatelessWidget {
         if (actions.isNotEmpty) ...[
           const SizedBox(height: 12),
           Row(
-            children:
-                actions.expand((w) => [w, const SizedBox(width: 10)]).toList()
-                  ..removeLast(),
+            children: actions
+                .expand((w) => [w, const SizedBox(width: 10)])
+                .toList()
+              ..removeLast(),
           ),
         ],
       ],
@@ -581,27 +624,41 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         decoration: BoxDecoration(
           gradient: gradient,
-          color: gradient == null ? Colors.white.withValues(alpha: 0.09) : null,
+          color: gradient == null
+              ? (isDark
+                  ? Colors.white.withValues(alpha: 0.09)
+                  : Colors.black.withValues(alpha: 0.05))
+              : null,
           borderRadius: BorderRadius.circular(12),
           border: gradient == null
-              ? Border.all(color: Colors.white.withValues(alpha: 0.12))
+              ? Border.all(color: AppTheme.borderColor(isDark))
               : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 16),
+            Icon(
+              icon,
+              color: gradient == null
+                  ? AppTheme.textColor(isDark)
+                  : Colors.white,
+              size: 16,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: gradient == null
+                    ? AppTheme.textColor(isDark)
+                    : Colors.white,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),

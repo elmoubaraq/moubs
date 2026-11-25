@@ -5,10 +5,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_picker_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -45,16 +46,16 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
   }
 
   Future<void> _pickFiles() async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final paths = await AppFilePicker.pickMultiplePdfFiles(
+      context,
+      ref: ref,
+      title: 'Select PDFs to Merge',
     );
-    if (result == null) return;
+    if (paths.isEmpty) return;
     setState(() {
-      for (final file in result.files) {
-        if (file.path != null && !_files.contains(file.path)) {
-          _files.add(file.path!);
+      for (final path in paths) {
+        if (!_files.contains(path)) {
+          _files.add(path);
         }
       }
     });
@@ -97,8 +98,9 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
       final result = await ref
           .read(pdfServiceProvider)
           .mergePdfs(pdfPaths: _files, outputName: outputName);
+
       if (!result.isSuccess || result.outputPath == null) {
-        throw Exception(result.error ?? 'Operation failed');
+        throw Exception(result.error ?? 'Merge failed');
       }
       final outputPath = result.outputPath!;
 
@@ -109,13 +111,16 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
         type: DocumentType.mergedPdf,
         createdAt: DateTime.now(),
         modifiedAt: DateTime.now(),
-        fileSizeBytes: File(outputPath).existsSync()
-            ? File(outputPath).lengthSync()
-            : 0,
+        fileSizeBytes: result.fileSizeBytes ??
+            (File(outputPath).existsSync()
+                ? File(outputPath).lengthSync()
+                : 0),
       );
 
       await ref.read(documentsProvider.notifier).addDocument(doc);
-      await ref.read(adServiceProvider).showInterstitialAfterTask();
+      try {
+        await ref.read(adServiceProvider).showInterstitialAfterTask();
+      } catch (_) {}
 
       if (!mounted) return;
       setState(() => _isProcessing = false);
@@ -154,7 +159,7 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: AppTheme.background,
           body: CustomScrollView(
             slivers: [
               ToolSliverHeader(
@@ -172,7 +177,9 @@ class _MergePdfScreenState extends ConsumerState<MergePdfScreen> {
                     children: [
                       // File picker zone
                       _PickerZone(onTap: _pickFiles, gradient: _gradient),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      const NativeAdWidget(maxHeight: 110),
+                      const SizedBox(height: 12),
 
                       if (_files.isNotEmpty) ...[
                         _SectionLabel(
@@ -262,17 +269,16 @@ class _PickerZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: 200.ms,
         curve: Curves.easeOut,
         decoration: BoxDecoration(
-          color: AppTheme.cardColor(isDark),
+          color: AppTheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+            color: const Color(0xFF7C3AED).withOpacity(0.4),
             width: 1.5,
           ),
         ),
@@ -292,21 +298,18 @@ class _PickerZone extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Tap to select PDFs',
               style: TextStyle(
-                color: AppTheme.textColor(isDark),
+                color: Colors.white,
                 fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'You can select multiple files at once',
-              style: TextStyle(
-                color: AppTheme.textSecondaryColor(isDark),
-                fontSize: 13,
-              ),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
           ],
         ),
@@ -333,13 +336,12 @@ class _FileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor(isDark),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderColor(isDark)),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -358,10 +360,10 @@ class _FileTile extends StatelessWidget {
         ),
         title: Text(
           name,
-          style: TextStyle(
-            color: AppTheme.textColor(isDark),
+          style: const TextStyle(
+            color: Colors.white,
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -371,7 +373,7 @@ class _FileTile extends StatelessWidget {
                 margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -436,31 +438,27 @@ class _OutputNameField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
-      style: TextStyle(color: AppTheme.textColor(isDark), fontSize: 15),
+      style: const TextStyle(color: Colors.white, fontSize: 15),
       decoration: InputDecoration(
         hintText: 'merged_document',
-        hintStyle: TextStyle(color: AppTheme.textSecondaryColor(isDark)),
+        hintStyle: TextStyle(color: AppTheme.textSecondary),
         suffixText: '.pdf',
-        suffixStyle: TextStyle(
-          color: AppTheme.textSecondaryColor(isDark),
-          fontSize: 14,
-        ),
+        suffixStyle: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
         filled: true,
-        fillColor: AppTheme.cardColor(isDark),
+        fillColor: AppTheme.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.borderColor(isDark)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

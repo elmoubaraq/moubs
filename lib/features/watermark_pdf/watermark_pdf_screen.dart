@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../core/models/document_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_picker_helper.dart';
+import '../../core/widgets/ad_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../_shared/tool_widgets.dart';
 
@@ -38,13 +40,14 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final path = await AppFilePicker.pickPdfFile(
+      context,
+      ref: ref,
+      title: 'Select PDF to Watermark',
     );
-    if (result == null || result.files.single.path == null) return;
+    if (path == null) return;
     setState(() {
-      _filePath = result.files.single.path;
+      _filePath = path;
     });
   }
 
@@ -64,7 +67,12 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
 
     setState(() => _isProcessing = true);
     try {
-      final name = 'watermarked_${const Uuid().v4()}.pdf';
+      final base = _filePath!
+          .split(RegExp(r'[\\/]'))
+          .last
+          .replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
+      final name = '${base}_watermarked';
+
       final result = await ref
           .read(pdfServiceProvider)
           .watermarkPdf(
@@ -93,18 +101,24 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
 
       await ref.read(documentsProvider.notifier).addDocument(doc);
 
+      // Show interstitial or rewarded ad
+      try {
+        await ref.read(adServiceProvider).showInterstitialAfterTask();
+      } catch (_) {}
+
       if (mounted) {
         setState(() => _isProcessing = false);
+        HapticFeedback.mediumImpact();
         showModalBottomSheet(
           context: context,
           isDismissible: false,
-          builder: (_) => SuccessSheet(
+          builder: (sheetCtx) => SuccessSheet(
             title: 'Watermark Added!',
             subtitle: doc.name,
             path: doc.filePath,
             gradient: _gradient,
             onDone: () {
-              Navigator.pop(context);
+              Navigator.pop(sheetCtx);
               context.pop();
             },
           ),
@@ -113,9 +127,9 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+        );
       }
     }
   }
@@ -140,13 +154,15 @@ class _WatermarkPdfScreenState extends ConsumerState<WatermarkPdfScreen> {
                   delegate: SliverChildListDelegate([
                     FilePickerZone(
                       selectedPath: _filePath,
-                      hint: 'Select PDF File',
-                      accept: 'PDF files only',
+                      hint: 'Tap to select a PDF',
+                      accept: 'Device or Google Drive',
                       gradient: _gradient,
                       onTap: _pickFile,
                     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+                    const NativeAdWidget(maxHeight: 110),
+                    const SizedBox(height: 12),
 
                     _SectionCard(
                       title: 'Watermark Text',
@@ -300,12 +316,14 @@ class _WatermarkPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: 180,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2332),
+        color: AppTheme.cardColor(isDark),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppTheme.borderColor(isDark)),
       ),
       clipBehavior: Clip.hardEdge,
       child: Stack(
@@ -320,14 +338,16 @@ class _WatermarkPreviewCard extends StatelessWidget {
               (i) => Container(
                 height: 1,
                 margin: const EdgeInsets.symmetric(horizontal: 24),
-                color: Colors.white.withValues(alpha: 0.05),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.04),
               ),
             ),
           ),
           // Corner decoration
           Positioned(
-            top: 8,
-            left: 8,
+            top: 10,
+            left: 12,
             child: Row(
               children: [
                 Container(
@@ -384,7 +404,7 @@ class _WatermarkPreviewCard extends StatelessWidget {
               'Preview',
               style: TextStyle(
                 fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.3),
+                color: AppTheme.textSecondaryColor(isDark),
                 fontStyle: FontStyle.italic,
               ),
             ),
